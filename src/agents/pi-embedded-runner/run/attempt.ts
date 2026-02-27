@@ -70,6 +70,8 @@ import {
   loadWorkspaceSkillEntries,
   resolveSkillsPromptForRun,
 } from "../../skills.js";
+import { setCurrentSlotId, installSlotAffinityFetch } from "../../slot-affinity-fetch.js";
+import { slotAffinity } from "../../slot-affinity.js";
 import { buildSystemPromptParams } from "../../system-prompt-params.js";
 import { buildSystemPromptReport } from "../../system-prompt-report.js";
 import { sanitizeToolCallIdsForCloudCodeAssist } from "../../tool-call-id.js";
@@ -773,6 +775,17 @@ export async function runEmbeddedAttempt(
         workspaceDir: params.workspaceDir,
       });
 
+      // Slot affinity for llama-server KV cache optimization
+      const providerConfig = params.config?.models?.providers?.[params.model.provider];
+      const slotAffinityConfig = providerConfig?.slotAffinity;
+      if (slotAffinityConfig?.enabled && providerConfig?.baseUrl) {
+        installSlotAffinityFetch(providerConfig.baseUrl);
+        slotAffinity.configure(slotAffinityConfig);
+        const slotId = slotAffinity.getSlotForSession(params.sessionKey ?? params.sessionId);
+        setCurrentSlotId(slotId);
+      } else {
+        setCurrentSlotId(undefined);
+      }
       // Ollama native API: bypass SDK's streamSimple and use direct /api/chat calls
       // for reliable streaming + tool calling support (#11828).
       if (params.model.api === "ollama") {

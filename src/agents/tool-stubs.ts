@@ -34,13 +34,19 @@ export function applyStubMode(
 
   const fullSchemaSet = new Set((config.fullSchemaTools ?? []).map((name) => name.toLowerCase()));
 
-  return tools.map((tool) => {
+  let stubbedCount = 0,
+    fullCount = 0;
+  const result = tools.map((tool) => {
     const normalizedName = tool.name.toLowerCase();
     if (fullSchemaSet.has(normalizedName)) {
+      fullCount++;
       return tool;
     }
+    stubbedCount++;
     return stripToStubSchema(tool);
   });
+  console.log(`[tool-stubs] Applied: ${stubbedCount} stubbed, ${fullCount} full`);
+  return result;
 }
 
 /**

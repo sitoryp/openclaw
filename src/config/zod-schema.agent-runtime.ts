@@ -780,7 +780,7 @@ export const ToolsSchema = z
         enabled: z.boolean(),
         compactGuidance: z.boolean().optional(),
         guidance: z.string().optional(),
-        preserveTools: z.array(z.string()).optional(),
+        fullSchemaTools: z.array(z.string()).optional(),
       })
       .strict()
       .optional(),
