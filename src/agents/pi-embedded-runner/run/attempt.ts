@@ -74,6 +74,7 @@ import { buildSystemPromptParams } from "../../system-prompt-params.js";
 import { buildSystemPromptReport } from "../../system-prompt-report.js";
 import { sanitizeToolCallIdsForCloudCodeAssist } from "../../tool-call-id.js";
 import { resolveEffectiveToolFsWorkspaceOnly } from "../../tool-fs-policy.js";
+import { applyStubMode, generateToolStubGuidance } from "../../tool-stubs.js";
 import { resolveTranscriptPolicy } from "../../transcript-policy.js";
 import { DEFAULT_BOOTSTRAP_FILENAME } from "../../workspace.js";
 import { isRunnerAbortError } from "../abort.js";
@@ -445,7 +446,14 @@ export async function runEmbeddedAttempt(
             params.requireExplicitMessageTarget ?? isSubagentSessionKey(params.sessionKey),
           disableMessageTool: params.disableMessageTool,
         });
-    const tools = sanitizeToolsForGoogle({ tools: toolsRaw, provider: params.provider });
+    const toolsSanitized = sanitizeToolsForGoogle({ tools: toolsRaw, provider: params.provider });
+
+    // Apply stub mode if configured (reduces token usage for local models)
+    const stubModeConfig = params.config?.tools?.stubMode;
+    const tools = applyStubMode(toolsSanitized, stubModeConfig);
+    const toolStubGuidance = stubModeConfig?.enabled
+      ? (stubModeConfig.guidance ?? generateToolStubGuidance(toolsRaw))
+      : undefined;
     const allowedToolNames = collectAllowedToolNames({
       tools,
       clientTools: params.clientTools,
@@ -554,7 +562,8 @@ export async function runEmbeddedAttempt(
       workspaceDir: effectiveWorkspace,
       defaultThinkLevel: params.thinkLevel,
       reasoningLevel: params.reasoningLevel ?? "off",
-      extraSystemPrompt: params.extraSystemPrompt,
+      extraSystemPrompt:
+        [params.extraSystemPrompt, toolStubGuidance].filter(Boolean).join("\n\n") || undefined,
       ownerNumbers: params.ownerNumbers,
       ownerDisplay: ownerDisplay.ownerDisplay,
       ownerDisplaySecret: ownerDisplay.ownerDisplaySecret,
