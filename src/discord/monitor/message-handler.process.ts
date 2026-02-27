@@ -35,6 +35,7 @@ import { truncateUtf16Safe } from "../../utils.js";
 import { chunkDiscordTextWithMode } from "../chunk.js";
 import { resolveDiscordDraftStreamingChunking } from "../draft-chunking.js";
 import { createDiscordDraftStream } from "../draft-stream.js";
+import { createProgressStreamAdapter } from "../progress-stream-adapter.js";
 import { reactMessageDiscord, removeReactionDiscord } from "../send.js";
 import { editMessageDiscord } from "../send.messages.js";
 import { normalizeDiscordSlug, resolveDiscordOwnerAllowFrom } from "./allow-list.js";
@@ -452,6 +453,25 @@ export async function processDiscordMessage(ctx: DiscordMessagePreflightContext)
         warn: logVerbose,
       })
     : undefined;
+
+  // --- Progress stream (IdleHands-style tool history block) ---
+  const useProgressMode = discordConfig?.progressMode === true;
+  const progressAdapter =
+    useProgressMode && canStreamDraft
+      ? createProgressStreamAdapter({
+          placeholder: null, // Will be set when first message is sent
+          channelId: deliverChannelId,
+          rest: client.rest,
+          maxChars: draftMaxChars,
+          editIntervalMs: 1500,
+          maxToolLines: 8,
+          showStats: true,
+          timeoutMs: (cfg.agents?.defaults?.timeoutSeconds ?? 600) * 1000,
+        })
+      : undefined;
+  if (progressAdapter) {
+    progressAdapter.start();
+  }
   const draftChunking =
     draftStream && discordStreamMode === "block"
       ? resolveDiscordDraftStreamingChunking(cfg, accountId)
@@ -692,7 +712,13 @@ export async function processDiscordMessage(ctx: DiscordMessagePreflightContext)
           (typeof discordConfig?.blockStreaming === "boolean"
             ? !discordConfig.blockStreaming
             : undefined),
-        onPartialReply: draftStream ? (payload) => updateDraftFromPartial(payload.text) : undefined,
+        onPartialReply:
+          draftStream || progressAdapter
+            ? (payload) => {
+                updateDraftFromPartial(payload.text);
+                progressAdapter?.onPartialReply(payload);
+              }
+            : undefined,
         onAssistantMessageStart: draftStream
           ? () => {
               if (shouldSplitPreviewMessages && hasStreamedMessage) {
@@ -720,6 +746,7 @@ export async function processDiscordMessage(ctx: DiscordMessagePreflightContext)
           await statusReactions.setThinking();
         },
         onToolStart: async (payload) => {
+          progressAdapter?.onToolStart(payload);
           await statusReactions.setTool(payload.name);
         },
       },
@@ -731,6 +758,7 @@ export async function processDiscordMessage(ctx: DiscordMessagePreflightContext)
     try {
       // Must stop() first to flush debounced content before clear() wipes state.
       await draftStream?.stop();
+      progressAdapter?.stop();
       if (!finalizedViaPreviewMessage) {
         await draftStream?.clear();
       }
