@@ -12,6 +12,8 @@ export type RenderOptions = {
   maxToolLines?: number;
   /** Max assistant preview chars (default: 1200) */
   maxAssistantChars?: number;
+  /** Show stats line (turn count, tokens) */
+  showStats?: boolean;
 };
 
 function escapeCodeFence(s: string): string {
@@ -36,6 +38,20 @@ function tail<T>(arr: T[], n: number): T[] {
   return arr.length <= n ? arr : arr.slice(arr.length - n);
 }
 
+function formatTokens(n: number): string {
+  if (n >= 1000) {
+    return `${(n / 1000).toFixed(1)}k`;
+  }
+  return String(n);
+}
+
+function formatTps(tps: number | undefined): string | null {
+  if (tps == null || !Number.isFinite(tps)) {
+    return null;
+  }
+  return `${tps.toFixed(0)} t/s`;
+}
+
 export type ProgressRenderInput = {
   /** Banner text (e.g., warnings) */
   banner?: string | null;
@@ -54,6 +70,7 @@ export function renderProgressMarkdown(input: ProgressRenderInput, opts?: Render
   const maxChars = opts?.maxChars ?? 1900;
   const maxToolLines = opts?.maxToolLines ?? 8;
   const maxAssistantChars = opts?.maxAssistantChars ?? 1200;
+  const showStats = opts?.showStats ?? true;
 
   const parts: string[] = [];
   let usedChars = 0;
@@ -81,6 +98,33 @@ export function renderProgressMarkdown(input: ProgressRenderInput, opts?: Render
     addPart(`*${status}*`);
   } else {
     addPart("*⏳ Thinking...*");
+  }
+
+  // Stats line (turn count, tokens, speed)
+  if (showStats && input.snapshot.turnCount > 0) {
+    const snap = input.snapshot;
+    const statParts: string[] = [];
+
+    statParts.push(`Turn ${snap.turnCount}`);
+
+    if (snap.totalToolCalls > 0) {
+      statParts.push(`${snap.totalToolCalls} tools`);
+    }
+
+    const totalTok = snap.totalPromptTokens + snap.totalCompletionTokens;
+    if (totalTok > 0) {
+      statParts.push(`${formatTokens(totalTok)} tokens`);
+    }
+
+    // Show generation speed if available
+    const tgTps = formatTps(snap.lastTurnStats?.tgTps);
+    if (tgTps) {
+      statParts.push(tgTps);
+    }
+
+    if (statParts.length > 0) {
+      addPart(`\`${statParts.join(" · ")}\``, "\n");
+    }
   }
 
   // Tool lines block (code block for monospace)
@@ -122,12 +166,37 @@ export function renderProgressMarkdown(input: ProgressRenderInput, opts?: Render
 export function renderFinalMessage(
   toolLines: string[],
   finalText: string,
-  opts?: { maxChars?: number; maxToolLines?: number },
+  opts?: {
+    maxChars?: number;
+    maxToolLines?: number;
+    stats?: {
+      turnCount: number;
+      totalToolCalls: number;
+      totalTokens: number;
+      elapsedMs: number;
+    };
+  },
 ): string {
   const maxChars = opts?.maxChars ?? 1900;
   const maxToolLines = opts?.maxToolLines ?? 8;
 
   const parts: string[] = [];
+
+  // Stats summary at the top
+  if (opts?.stats) {
+    const { turnCount, totalToolCalls, totalTokens, elapsedMs } = opts.stats;
+    const elapsed =
+      elapsedMs >= 60000
+        ? `${Math.floor(elapsedMs / 60000)}m${Math.floor((elapsedMs % 60000) / 1000)}s`
+        : `${Math.floor(elapsedMs / 1000)}s`;
+    const statParts = [
+      `${turnCount} turns`,
+      `${totalToolCalls} tools`,
+      `${formatTokens(totalTokens)} tokens`,
+      elapsed,
+    ];
+    parts.push(`\`${statParts.join(" · ")}\``);
+  }
 
   // Keep last N tool lines
   const keptLines = tail(toolLines.filter(Boolean), maxToolLines);

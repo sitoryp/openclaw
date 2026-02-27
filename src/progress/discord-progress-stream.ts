@@ -6,9 +6,9 @@
  *   stream.start();
  *
  *   // Wire up to agent events
- *   agent.on('tool_call', stream.hooks.onToolCall);
- *   agent.on('tool_result', stream.hooks.onToolResult);
- *   agent.on('token', stream.hooks.onToken);
+ *   agent.on("tool_call", stream.hooks.onToolCall);
+ *   agent.on("tool_result", stream.hooks.onToolResult);
+ *   agent.on("token", stream.hooks.onToken);
  *
  *   // When done
  *   await stream.finalize(finalText);
@@ -30,6 +30,8 @@ export type DiscordProgressStreamOptions = {
   maxToolLines?: number;
   /** Max assistant text preview chars (default: 1200) */
   maxAssistantChars?: number;
+  /** Show stats line (turn count, tokens) - default: true */
+  showStats?: boolean;
 };
 
 export class DiscordProgressStream {
@@ -62,6 +64,7 @@ export class DiscordProgressStream {
       maxChars: opts?.maxChars ?? 1900,
       maxToolLines: opts?.maxToolLines ?? 8,
       maxAssistantChars: opts?.maxAssistantChars ?? 1200,
+      showStats: opts?.showStats ?? true,
     };
 
     this.progress = new TurnProgressController(
@@ -108,7 +111,7 @@ export class DiscordProgressStream {
     }
   }
 
-  /** Stop progress tracking (but don't finalize) */
+  /** Stop progress tracking (but do not finalize) */
   stop(): void {
     if (this.scheduler) {
       this.scheduler.stop();
@@ -162,6 +165,11 @@ export class DiscordProgressStream {
     this.dirty = true;
   }
 
+  /** Get current snapshot */
+  getSnapshot(): ProgressSnapshot {
+    return this.lastSnapshot ?? this.progress.snapshot();
+  }
+
   /** Render current state to Discord markdown */
   private render(): string {
     const snapshot = this.lastSnapshot ?? this.progress.snapshot();
@@ -176,6 +184,7 @@ export class DiscordProgressStream {
         maxChars: this.opts.maxChars,
         maxToolLines: this.opts.maxToolLines,
         maxAssistantChars: this.opts.maxAssistantChars,
+        showStats: this.opts.showStats,
       },
     );
   }
@@ -191,6 +200,12 @@ export class DiscordProgressStream {
     const combined = renderFinalMessage(toolLines, finalText, {
       maxChars: this.opts.maxChars,
       maxToolLines: this.opts.maxToolLines,
+      stats: {
+        turnCount: snapshot.turnCount,
+        totalToolCalls: snapshot.totalToolCalls,
+        totalTokens: snapshot.totalPromptTokens + snapshot.totalCompletionTokens,
+        elapsedMs: snapshot.elapsedMs,
+      },
     });
 
     // Split if too long
@@ -231,6 +246,12 @@ export class DiscordProgressStream {
     const combined = renderFinalMessage(toolLines, `❌ ${errorMsg}`, {
       maxChars: this.opts.maxChars,
       maxToolLines: this.opts.maxToolLines,
+      stats: {
+        turnCount: snapshot.turnCount,
+        totalToolCalls: snapshot.totalToolCalls,
+        totalTokens: snapshot.totalPromptTokens + snapshot.totalCompletionTokens,
+        elapsedMs: snapshot.elapsedMs,
+      },
     });
 
     if (this.placeholder) {

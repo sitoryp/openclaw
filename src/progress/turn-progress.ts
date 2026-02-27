@@ -106,6 +106,13 @@ function defaultFormatToolCall(call: ToolCallEvent): string {
   return name;
 }
 
+function formatTokens(n: number): string {
+  if (n >= 1000) {
+    return `${(n / 1000).toFixed(1)}k`;
+  }
+  return String(n);
+}
+
 export type ProgressSink = (snap: ProgressSnapshot) => void;
 
 export class TurnProgressController {
@@ -125,6 +132,13 @@ export class TurnProgressController {
 
   private activeTool: { name: string; summary: string; startedAt: number } | null = null;
   private toolLines: string[] = [];
+
+  // Turn/token tracking
+  private turnCount = 0;
+  private totalToolCalls = 0;
+  private totalPromptTokens = 0;
+  private totalCompletionTokens = 0;
+  private lastTurnStats: TurnEndEvent | null = null;
 
   constructor(sink: ProgressSink, opts?: TurnProgressOptions) {
     this.sink = sink;
@@ -187,6 +201,11 @@ export class TurnProgressController {
       statusLine,
       toolLines: [...this.toolLines],
       activeTool,
+      turnCount: this.turnCount,
+      totalToolCalls: this.totalToolCalls,
+      totalPromptTokens: this.totalPromptTokens,
+      totalCompletionTokens: this.totalCompletionTokens,
+      lastTurnStats: this.lastTurnStats ?? undefined,
     };
   }
 
@@ -195,19 +214,26 @@ export class TurnProgressController {
     activeTool?: { name: string; summary: string; elapsedMs: number },
   ): string {
     const total = formatElapsed(elapsedBucket);
+    const turnInfo = this.turnCount > 0 ? `T${this.turnCount}` : "";
+    const tokenInfo =
+      this.totalPromptTokens > 0
+        ? `${formatTokens(this.totalPromptTokens + this.totalCompletionTokens)} tok`
+        : "";
+    const stats = [turnInfo, tokenInfo].filter(Boolean).join(" · ");
+    const statsSuffix = stats ? ` [${stats}]` : "";
 
     if (this.phase === "tool" && activeTool) {
       const toolTime = formatElapsed(bucket(activeTool.elapsedMs, this.bucketMs));
-      return truncate(`🔧 ${activeTool.summary} (${toolTime} / ${total} total)`, 120);
+      return truncate(`🔧 ${activeTool.summary} (${toolTime} / ${total})${statsSuffix}`, 140);
     }
 
     if (this.phase === "responding") {
-      return `✍️ Writing (${total})`;
+      return `✍️ Writing (${total})${statsSuffix}`;
     }
     if (this.phase === "done") {
-      return `✅ Done (${total})`;
+      return `✅ Done (${total})${statsSuffix}`;
     }
-    return `⏳ Thinking (${total})`;
+    return `⏳ Thinking (${total})${statsSuffix}`;
   }
 
   private emit(force: boolean): void {
@@ -258,6 +284,7 @@ export class TurnProgressController {
 
   private onToolCall(call: ToolCallEvent): void {
     this.markActivity();
+    this.totalToolCalls++;
 
     const summary = this.formatToolCall(call);
     this.activeTool = { name: call.name, summary, startedAt: Date.now() };
@@ -278,8 +305,19 @@ export class TurnProgressController {
     this.emit(true);
   }
 
-  private onTurnEnd(_stats: TurnEndEvent): void {
+  private onTurnEnd(stats: TurnEndEvent): void {
     this.markActivity();
+    this.turnCount = stats.turn;
+    this.lastTurnStats = stats;
+
+    // Accumulate tokens
+    if (stats.promptTokensTurn != null) {
+      this.totalPromptTokens += stats.promptTokensTurn;
+    }
+    if (stats.completionTokensTurn != null) {
+      this.totalCompletionTokens += stats.completionTokensTurn;
+    }
+
     this.emit(true);
   }
 }

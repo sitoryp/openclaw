@@ -46,6 +46,16 @@ export type ProgressSnapshot = {
     summary: string;
     elapsedMs: number;
   };
+  /** Current turn number */
+  turnCount: number;
+  /** Total tool calls made */
+  totalToolCalls: number;
+  /** Total prompt tokens used */
+  totalPromptTokens: number;
+  /** Total completion tokens generated */
+  totalCompletionTokens: number;
+  /** Stats from last turn end event */
+  lastTurnStats?: TurnEndEvent;
 };
 
 export type ProgressHooks = {
