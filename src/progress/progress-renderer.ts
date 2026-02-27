@@ -45,6 +45,21 @@ function formatTokens(n: number): string {
   return String(n);
 }
 
+function formatElapsed(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  if (totalSeconds < 60) {
+    return `${totalSeconds}s`;
+  }
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes < 60) {
+    return `${minutes}m${String(seconds).padStart(2, "0")}s`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours}h${String(mins).padStart(2, "0")}m`;
+}
+
 function formatTps(tps: number | undefined): string | null {
   if (tps == null || !Number.isFinite(tps)) {
     return null;
@@ -159,6 +174,18 @@ export function renderProgressMarkdown(input: ProgressRenderInput, opts?: Render
   return result || "*⏳ Thinking...*";
 }
 
+export type FinalStatus = "completed" | "timeout" | "error";
+
+export type FinalMessageStats = {
+  turnCount: number;
+  totalToolCalls: number;
+  totalTokens: number;
+  elapsedMs: number;
+  status: FinalStatus;
+  /** Timeout limit in ms (for display when status is timeout) */
+  timeoutMs?: number;
+};
+
 /**
  * Render final message with tool history + final response.
  * Used when the run completes.
@@ -169,12 +196,7 @@ export function renderFinalMessage(
   opts?: {
     maxChars?: number;
     maxToolLines?: number;
-    stats?: {
-      turnCount: number;
-      totalToolCalls: number;
-      totalTokens: number;
-      elapsedMs: number;
-    };
+    stats?: FinalMessageStats;
   },
 ): string {
   const maxChars = opts?.maxChars ?? 1900;
@@ -182,20 +204,39 @@ export function renderFinalMessage(
 
   const parts: string[] = [];
 
-  // Stats summary at the top
+  // Status indicator + stats summary at the top
   if (opts?.stats) {
-    const { turnCount, totalToolCalls, totalTokens, elapsedMs } = opts.stats;
-    const elapsed =
-      elapsedMs >= 60000
-        ? `${Math.floor(elapsedMs / 60000)}m${Math.floor((elapsedMs % 60000) / 1000)}s`
-        : `${Math.floor(elapsedMs / 1000)}s`;
+    const { turnCount, totalToolCalls, totalTokens, elapsedMs, status, timeoutMs } = opts.stats;
+    const elapsed = formatElapsed(elapsedMs);
+
+    let statusIcon: string;
+    let statusText: string;
+
+    switch (status) {
+      case "timeout":
+        statusIcon = "⏱️";
+        statusText = timeoutMs
+          ? `Timed out after ${formatElapsed(timeoutMs)}`
+          : `Timed out after ${elapsed}`;
+        break;
+      case "error":
+        statusIcon = "❌";
+        statusText = `Failed after ${elapsed}`;
+        break;
+      case "completed":
+      default:
+        statusIcon = "✅";
+        statusText = `Completed in ${elapsed}`;
+        break;
+    }
+
     const statParts = [
-      `${turnCount} turns`,
-      `${totalToolCalls} tools`,
+      `${turnCount} turn${turnCount !== 1 ? "s" : ""}`,
+      `${totalToolCalls} tool${totalToolCalls !== 1 ? "s" : ""}`,
       `${formatTokens(totalTokens)} tokens`,
-      elapsed,
     ];
-    parts.push(`\`${statParts.join(" · ")}\``);
+
+    parts.push(`${statusIcon} **${statusText}** · \`${statParts.join(" · ")}\``);
   }
 
   // Keep last N tool lines
@@ -208,6 +249,8 @@ export function renderFinalMessage(
   const final = finalText?.trim();
   if (final) {
     parts.push(final);
+  } else if (opts?.stats?.status === "timeout") {
+    parts.push("*(task timed out before completion)*");
   } else {
     parts.push("*(no response)*");
   }

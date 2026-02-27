@@ -12,12 +12,18 @@
  *
  *   // When done
  *   await stream.finalize(finalText);
+ *   // Or on timeout
+ *   await stream.finalizeTimeout(partialText, timeoutMs);
  */
 
 import type { RequestClient } from "@buape/carbon";
 import { Routes } from "discord-api-types/v10";
 import { MessageEditScheduler } from "./message-scheduler.js";
-import { renderProgressMarkdown, renderFinalMessage } from "./progress-renderer.js";
+import {
+  renderProgressMarkdown,
+  renderFinalMessage,
+  type FinalStatus,
+} from "./progress-renderer.js";
 import { TurnProgressController } from "./turn-progress.js";
 import type { ProgressHooks, ProgressSnapshot, ToolStreamEvent } from "./types.js";
 
@@ -189,8 +195,40 @@ export class DiscordProgressStream {
     );
   }
 
-  /** Finalize with the final response text */
+  /** Build stats object from current snapshot */
+  private buildStats(status: FinalStatus, timeoutMs?: number) {
+    const snapshot = this.lastSnapshot ?? this.progress.snapshot();
+    return {
+      turnCount: snapshot.turnCount,
+      totalToolCalls: snapshot.totalToolCalls,
+      totalTokens: snapshot.totalPromptTokens + snapshot.totalCompletionTokens,
+      elapsedMs: snapshot.elapsedMs,
+      status,
+      timeoutMs,
+    };
+  }
+
+  /** Finalize with the final response text (successful completion) */
   async finalize(finalText: string): Promise<void> {
+    await this.finalizeWithStatus(finalText, "completed");
+  }
+
+  /** Finalize due to timeout */
+  async finalizeTimeout(partialText: string, timeoutMs?: number): Promise<void> {
+    await this.finalizeWithStatus(partialText, "timeout", timeoutMs);
+  }
+
+  /** Finalize with an error message */
+  async finalizeError(errorMsg: string): Promise<void> {
+    await this.finalizeWithStatus(`❌ ${errorMsg}`, "error");
+  }
+
+  /** Internal finalize with status */
+  private async finalizeWithStatus(
+    finalText: string,
+    status: FinalStatus,
+    timeoutMs?: number,
+  ): Promise<void> {
     this.finalized = true;
     this.stop();
 
@@ -200,12 +238,7 @@ export class DiscordProgressStream {
     const combined = renderFinalMessage(toolLines, finalText, {
       maxChars: this.opts.maxChars,
       maxToolLines: this.opts.maxToolLines,
-      stats: {
-        turnCount: snapshot.turnCount,
-        totalToolCalls: snapshot.totalToolCalls,
-        totalTokens: snapshot.totalPromptTokens + snapshot.totalCompletionTokens,
-        elapsedMs: snapshot.elapsedMs,
-      },
+      stats: this.buildStats(status, timeoutMs),
     });
 
     // Split if too long
@@ -232,38 +265,6 @@ export class DiscordProgressStream {
 
     if (chunks.length > 10) {
       await this.sendMessage("[truncated — response too long]");
-    }
-  }
-
-  /** Finalize with an error message */
-  async finalizeError(errorMsg: string): Promise<void> {
-    this.finalized = true;
-    this.stop();
-
-    const snapshot = this.lastSnapshot ?? this.progress.snapshot();
-    const toolLines = snapshot.toolLines;
-
-    const combined = renderFinalMessage(toolLines, `❌ ${errorMsg}`, {
-      maxChars: this.opts.maxChars,
-      maxToolLines: this.opts.maxToolLines,
-      stats: {
-        turnCount: snapshot.turnCount,
-        totalToolCalls: snapshot.totalToolCalls,
-        totalTokens: snapshot.totalPromptTokens + snapshot.totalCompletionTokens,
-        elapsedMs: snapshot.elapsedMs,
-      },
-    });
-
-    if (this.placeholder) {
-      try {
-        await this.rest.patch(Routes.channelMessage(this.channelId, this.placeholder.id), {
-          body: { content: combined },
-        });
-      } catch {
-        await this.sendMessage(combined);
-      }
-    } else {
-      await this.sendMessage(combined);
     }
   }
 
