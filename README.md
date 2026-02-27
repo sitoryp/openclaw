@@ -1,3 +1,5 @@
+Forked from https://github.com/openclaw/openclaw So I can personalize it for local LLM efficiency
+
 # 🦞 OpenClaw — Personal AI Assistant
 
 <p align="center">
