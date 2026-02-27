@@ -611,4 +611,6 @@ export type ToolStubModeConfig = {
    * If not provided, auto-generated guidance is used.
    */
   guidance?: string;
+  /** Use compact built-in guidance instead of auto-generating from tool schemas. */
+  compactGuidance?: boolean;
 };

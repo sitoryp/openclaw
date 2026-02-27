@@ -74,7 +74,11 @@ import { buildSystemPromptParams } from "../../system-prompt-params.js";
 import { buildSystemPromptReport } from "../../system-prompt-report.js";
 import { sanitizeToolCallIdsForCloudCodeAssist } from "../../tool-call-id.js";
 import { resolveEffectiveToolFsWorkspaceOnly } from "../../tool-fs-policy.js";
-import { applyStubMode, generateToolStubGuidance } from "../../tool-stubs.js";
+import {
+  applyStubMode,
+  generateToolStubGuidance,
+  buildCompactToolGuidance,
+} from "../../tool-stubs.js";
 import { resolveTranscriptPolicy } from "../../transcript-policy.js";
 import { DEFAULT_BOOTSTRAP_FILENAME } from "../../workspace.js";
 import { isRunnerAbortError } from "../abort.js";
@@ -452,7 +456,10 @@ export async function runEmbeddedAttempt(
     const stubModeConfig = params.config?.tools?.stubMode;
     const tools = applyStubMode(toolsSanitized, stubModeConfig);
     const toolStubGuidance = stubModeConfig?.enabled
-      ? (stubModeConfig.guidance ?? generateToolStubGuidance(toolsRaw))
+      ? (stubModeConfig.guidance ??
+        (stubModeConfig.compactGuidance
+          ? buildCompactToolGuidance()
+          : generateToolStubGuidance(toolsRaw)))
       : undefined;
     const allowedToolNames = collectAllowedToolNames({
       tools,
