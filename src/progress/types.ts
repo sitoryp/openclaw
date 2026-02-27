@@ -1,0 +1,58 @@
+/**
+ * Progress tracking types for OpenClaw Discord streaming.
+ * Adapted from IdleHands.
+ */
+
+export type ToolCallEvent = {
+  id: string;
+  name: string;
+  args?: Record<string, unknown>;
+};
+
+export type ToolResultEvent = {
+  id: string;
+  name: string;
+  success: boolean;
+  summary: string;
+  errorCode?: string;
+};
+
+export type TurnEndEvent = {
+  turn: number;
+  toolCalls: number;
+  ttftMs?: number;
+  ttcMs?: number;
+  ppTps?: number;
+  tgTps?: number;
+  promptTokensTurn?: number;
+  completionTokensTurn?: number;
+};
+
+export type ToolStreamEvent = {
+  id: string;
+  stream: "stdout" | "stderr";
+  text: string;
+};
+
+export type ProgressPhase = "thinking" | "tool" | "responding" | "done";
+
+export type ProgressSnapshot = {
+  phase: ProgressPhase;
+  elapsedMs: number;
+  statusLine: string;
+  toolLines: string[];
+  activeTool?: {
+    name: string;
+    summary: string;
+    elapsedMs: number;
+  };
+};
+
+export type ProgressHooks = {
+  onToken?: (token: string) => void;
+  onFirstDelta?: () => void;
+  onToolCall?: (call: ToolCallEvent) => void;
+  onToolStream?: (event: ToolStreamEvent) => void;
+  onToolResult?: (result: ToolResultEvent) => void;
+  onTurnEnd?: (stats: TurnEndEvent) => void;
+};
