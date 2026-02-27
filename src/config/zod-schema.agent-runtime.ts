@@ -775,6 +775,15 @@ export const ToolsSchema = z
       })
       .strict()
       .optional(),
+    stubMode: z
+      .object({
+        enabled: z.boolean(),
+        compactGuidance: z.boolean().optional(),
+        guidance: z.string().optional(),
+        fullSchemaTools: z.array(z.string()).optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict()
   .superRefine((value, ctx) => {

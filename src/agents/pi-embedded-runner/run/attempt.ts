@@ -70,10 +70,17 @@ import {
   loadWorkspaceSkillEntries,
   resolveSkillsPromptForRun,
 } from "../../skills.js";
+import { setCurrentSlotId, installSlotAffinityFetch } from "../../slot-affinity-fetch.js";
+import { slotAffinity } from "../../slot-affinity.js";
 import { buildSystemPromptParams } from "../../system-prompt-params.js";
 import { buildSystemPromptReport } from "../../system-prompt-report.js";
 import { sanitizeToolCallIdsForCloudCodeAssist } from "../../tool-call-id.js";
 import { resolveEffectiveToolFsWorkspaceOnly } from "../../tool-fs-policy.js";
+import {
+  applyStubMode,
+  generateToolStubGuidance,
+  buildCompactToolGuidance,
+} from "../../tool-stubs.js";
 import { resolveTranscriptPolicy } from "../../transcript-policy.js";
 import { DEFAULT_BOOTSTRAP_FILENAME } from "../../workspace.js";
 import { isRunnerAbortError } from "../abort.js";
@@ -445,7 +452,17 @@ export async function runEmbeddedAttempt(
             params.requireExplicitMessageTarget ?? isSubagentSessionKey(params.sessionKey),
           disableMessageTool: params.disableMessageTool,
         });
-    const tools = sanitizeToolsForGoogle({ tools: toolsRaw, provider: params.provider });
+    const toolsSanitized = sanitizeToolsForGoogle({ tools: toolsRaw, provider: params.provider });
+
+    // Apply stub mode if configured (reduces token usage for local models)
+    const stubModeConfig = params.config?.tools?.stubMode;
+    const tools = applyStubMode(toolsSanitized, stubModeConfig);
+    const toolStubGuidance = stubModeConfig?.enabled
+      ? (stubModeConfig.guidance ??
+        (stubModeConfig.compactGuidance
+          ? buildCompactToolGuidance()
+          : generateToolStubGuidance(toolsRaw)))
+      : undefined;
     const allowedToolNames = collectAllowedToolNames({
       tools,
       clientTools: params.clientTools,
@@ -554,7 +571,8 @@ export async function runEmbeddedAttempt(
       workspaceDir: effectiveWorkspace,
       defaultThinkLevel: params.thinkLevel,
       reasoningLevel: params.reasoningLevel ?? "off",
-      extraSystemPrompt: params.extraSystemPrompt,
+      extraSystemPrompt:
+        [params.extraSystemPrompt, toolStubGuidance].filter(Boolean).join("\n\n") || undefined,
       ownerNumbers: params.ownerNumbers,
       ownerDisplay: ownerDisplay.ownerDisplay,
       ownerDisplaySecret: ownerDisplay.ownerDisplaySecret,
@@ -757,6 +775,17 @@ export async function runEmbeddedAttempt(
         workspaceDir: params.workspaceDir,
       });
 
+      // Slot affinity for llama-server KV cache optimization
+      const providerConfig = params.config?.models?.providers?.[params.model.provider];
+      const slotAffinityConfig = providerConfig?.slotAffinity;
+      if (slotAffinityConfig?.enabled && providerConfig?.baseUrl) {
+        installSlotAffinityFetch(providerConfig.baseUrl);
+        slotAffinity.configure(slotAffinityConfig);
+        const slotId = slotAffinity.getSlotForSession(params.sessionKey ?? params.sessionId);
+        setCurrentSlotId(slotId);
+      } else {
+        setCurrentSlotId(undefined);
+      }
       // Ollama native API: bypass SDK's streamSimple and use direct /api/chat calls
       // for reliable streaming + tool calling support (#11828).
       if (params.model.api === "ollama") {

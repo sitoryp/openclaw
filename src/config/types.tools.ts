@@ -418,6 +418,8 @@ export type MemorySearchConfig = {
 };
 
 export type ToolsConfig = {
+  /** Tool stub mode for reduced token usage with local models. */
+  stubMode?: ToolStubModeConfig;
   /** Base tool profile applied before allow/deny lists. */
   profile?: ToolProfileId;
   allow?: string[];
@@ -589,4 +591,26 @@ export type ToolsConfig = {
       deny?: string[];
     };
   };
+};
+
+/**
+ * Tool stub mode configuration for reduced token usage.
+ * When enabled, tool schemas are stripped to minimal stubs and
+ * usage guidance is added to the system prompt instead.
+ */
+export type ToolStubModeConfig = {
+  /** Enable stub mode (default: false). */
+  enabled?: boolean;
+  /**
+   * Tools that should retain full schemas even in stub mode.
+   * Use for complex tools where parameter guidance is critical.
+   */
+  fullSchemaTools?: string[];
+  /**
+   * Custom tool usage guidance injected into system prompt.
+   * If not provided, auto-generated guidance is used.
+   */
+  guidance?: string;
+  /** Use compact built-in guidance instead of auto-generating from tool schemas. */
+  compactGuidance?: boolean;
 };

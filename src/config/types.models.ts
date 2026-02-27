@@ -55,6 +55,11 @@ export type ModelProviderConfig = {
   headers?: Record<string, string>;
   authHeader?: boolean;
   models: ModelDefinitionConfig[];
+  /** Slot affinity for llama-server KV cache optimization. */
+  slotAffinity?: {
+    enabled?: boolean;
+    numSlots?: number;
+  };
 };
 
 export type BedrockDiscoveryConfig = {
