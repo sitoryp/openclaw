@@ -301,9 +301,13 @@ function enforceToolResultContextBudgetInPlace(params: {
 }
 
 export function installToolResultContextGuard(params: {
+  disabled?: boolean;
   agent: GuardableAgent;
   contextWindowTokens: number;
 }): () => void {
+  if (params.disabled) {
+    return () => {};
+  }
   const contextWindowTokens = Math.max(1, Math.floor(params.contextWindowTokens));
   const contextBudgetChars = Math.max(
     1_024,

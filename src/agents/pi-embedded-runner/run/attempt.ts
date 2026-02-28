@@ -750,7 +750,10 @@ export async function runEmbeddedAttempt(
         params.model.maxTokens,
         DEFAULT_CONTEXT_TOKENS,
       );
+      const toolResultTruncationDisabled =
+        params.config?.agents?.defaults?.toolResultTruncation === "off";
       removeToolResultContextGuard = installToolResultContextGuard({
+        disabled: toolResultTruncationDisabled,
         agent: activeSession.agent,
         contextWindowTokens: Math.max(
           1,
