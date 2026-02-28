@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/telegram",
+  "name": "@idlehands/telegram",
   "version": "2026.2.27",
   "private": true,
-  "description": "OpenClaw Telegram channel plugin",
+  "description": "IdleHands Telegram channel plugin",
   "type": "module",
-  "openclaw": {
+  "idlehands": {
     "extensions": [
       "./index.ts"
     ]

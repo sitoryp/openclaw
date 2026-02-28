@@ -1,13 +1,13 @@
 {
-  "name": "@openclaw/memory-core",
+  "name": "@idlehands/memory-core",
   "version": "2026.2.27",
   "private": true,
-  "description": "OpenClaw core memory search plugin",
+  "description": "IdleHands core memory search plugin",
   "type": "module",
   "peerDependencies": {
-    "openclaw": ">=2026.1.26"
+    "idlehands": ">=2026.1.26"
   },
-  "openclaw": {
+  "idlehands": {
     "extensions": [
       "./index.ts"
     ]

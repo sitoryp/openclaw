@@ -1,4 +1,4 @@
-import OpenClawKit
+import IdleHandsKit
 import SwiftUI
 
 struct ScreenTab: View {

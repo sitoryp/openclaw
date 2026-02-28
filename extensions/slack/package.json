@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/slack",
+  "name": "@idlehands/slack",
   "version": "2026.2.27",
   "private": true,
-  "description": "OpenClaw Slack channel plugin",
+  "description": "IdleHands Slack channel plugin",
   "type": "module",
-  "openclaw": {
+  "idlehands": {
     "extensions": [
       "./index.ts"
     ]

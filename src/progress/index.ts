@@ -1,5 +1,5 @@
 /**
- * Progress tracking and display for OpenClaw Discord streaming.
+ * Progress tracking and display for IdleHands Discord streaming.
  *
  * Provides IdleHands-style tool history blocks instead of rolling status lines.
  */

@@ -1,5 +1,5 @@
 /**
- * Progress tracking types for OpenClaw Discord streaming.
+ * Progress tracking types for IdleHands Discord streaming.
  * Adapted from IdleHands.
  */
 

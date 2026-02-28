@@ -1,5 +1,5 @@
 import Foundation
-import OpenClawKit
+import IdleHandsKit
 
 @MainActor
 final class GatewayHealthMonitor {

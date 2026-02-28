@@ -1,14 +1,14 @@
 ---
 name: command-logger
 description: "Log all command events to a centralized audit file"
-homepage: https://docs.openclaw.ai/automation/hooks#command-logger
+homepage: https://docs.idlehands.ai/automation/hooks#command-logger
 metadata:
   {
-    "openclaw":
+    "idlehands":
       {
         "emoji": "📝",
         "events": ["command"],
-        "install": [{ "id": "bundled", "kind": "bundled", "label": "Bundled with OpenClaw" }],
+        "install": [{ "id": "bundled", "kind": "bundled", "label": "Bundled with IdleHands" }],
       },
   }
 ---
@@ -22,7 +22,7 @@ Logs all command events (`/new`, `/reset`, `/stop`, etc.) to a centralized audit
 Every time you issue a command to the agent:
 
 1. **Captures event details** - Command action, timestamp, session key, sender ID, source
-2. **Appends to log file** - Writes a JSON line to `~/.openclaw/logs/commands.log`
+2. **Appends to log file** - Writes a JSON line to `~/.idlehands/logs/commands.log`
 3. **Silent operation** - Runs in the background without user notifications
 
 ## Output Format
@@ -43,7 +43,7 @@ Log entries are written in JSONL (JSON Lines) format:
 
 ## Log File Location
 
-`~/.openclaw/logs/commands.log`
+`~/.idlehands/logs/commands.log`
 
 ## Requirements
 
@@ -62,7 +62,7 @@ No configuration needed. The hook automatically:
 To disable this hook:
 
 ```bash
-openclaw hooks disable command-logger
+idlehands hooks disable command-logger
 ```
 
 Or via config:
@@ -86,13 +86,13 @@ The hook does not automatically rotate logs. To manage log size, you can:
 1. **Manual rotation**:
 
    ```bash
-   mv ~/.openclaw/logs/commands.log ~/.openclaw/logs/commands.log.old
+   mv ~/.idlehands/logs/commands.log ~/.idlehands/logs/commands.log.old
    ```
 
 2. **Use logrotate** (Linux):
-   Create `/etc/logrotate.d/openclaw`:
+   Create `/etc/logrotate.d/idlehands`:
    ```
-   /home/username/.openclaw/logs/commands.log {
+   /home/username/.idlehands/logs/commands.log {
        weekly
        rotate 4
        compress
@@ -106,17 +106,17 @@ The hook does not automatically rotate logs. To manage log size, you can:
 View recent commands:
 
 ```bash
-tail -n 20 ~/.openclaw/logs/commands.log
+tail -n 20 ~/.idlehands/logs/commands.log
 ```
 
 Pretty-print with jq:
 
 ```bash
-cat ~/.openclaw/logs/commands.log | jq .
+cat ~/.idlehands/logs/commands.log | jq .
 ```
 
 Filter by action:
 
 ```bash
-grep '"action":"new"' ~/.openclaw/logs/commands.log | jq .
+grep '"action":"new"' ~/.idlehands/logs/commands.log | jq .
 ```

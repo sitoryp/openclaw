@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/whatsapp",
+  "name": "@idlehands/whatsapp",
   "version": "2026.2.27",
   "private": true,
-  "description": "OpenClaw WhatsApp channel plugin",
+  "description": "IdleHands WhatsApp channel plugin",
   "type": "module",
-  "openclaw": {
+  "idlehands": {
     "extensions": [
       "./index.ts"
     ]

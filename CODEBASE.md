@@ -1,10 +1,10 @@
-# OpenClaw Codebase Deep Dive
+# IdleHands Codebase Deep Dive
 
-> This is a comprehensive guide to the OpenClaw codebase, written for AI agents and developers who need to understand the architecture deeply.
+> This is a comprehensive guide to the IdleHands codebase, written for AI agents and developers who need to understand the architecture deeply.
 
-## What is OpenClaw?
+## What is IdleHands?
 
-OpenClaw is a **personal AI assistant gateway** — a local-first control plane that connects AI models to messaging channels (WhatsApp, Telegram, Discord, Slack, Signal, iMessage, etc.) and provides tools for browser control, device automation, and multi-agent orchestration.
+IdleHands is a **personal AI assistant gateway** — a local-first control plane that connects AI models to messaging channels (WhatsApp, Telegram, Discord, Slack, Signal, iMessage, etc.) and provides tools for browser control, device automation, and multi-agent orchestration.
 
 **Key insight:** The Gateway is the brain. Everything else (channels, tools, nodes, apps) connects to it via WebSocket.
 
@@ -18,7 +18,7 @@ OpenClaw is a **personal AI assistant gateway** — a local-first control plane 
 ## Directory Structure
 
 ```
-openclaw/
+idlehands/
 ├── src/                    # Core source code (~50 subdirectories)
 │   ├── gateway/           # WebSocket server, HTTP endpoints, control plane
 │   ├── agents/            # Pi agent runtime, tools, sandbox, skills
@@ -80,7 +80,7 @@ openclaw/
 
 ## Architecture
 
-### The Gateway (Heart of OpenClaw)
+### The Gateway (Heart of IdleHands)
 
 The Gateway is a **WebSocket + HTTP server** that acts as the control plane:
 
@@ -123,12 +123,12 @@ Channels (WhatsApp/Telegram/Discord/...)
 
 ### Configuration System
 
-Config lives at `~/.openclaw/openclaw.json` (JSON5 format).
+Config lives at `~/.idlehands/idlehands.json` (JSON5 format).
 
 **Key types:**
 
 - `src/config/types.ts` — Exports all config type modules
-- `src/config/types.openclaw.ts` — Root `OpenClawConfig` type
+- `src/config/types.idlehands.ts` — Root `IdleHandsConfig` type
 - `src/config/types.gateway.ts` — Gateway-specific config
 - `src/config/types.channels.ts` — Channel config
 - `src/config/types.agents.ts` — Agent config
@@ -138,7 +138,7 @@ Config is validated with Zod and TypeBox schemas. Migration from legacy formats 
 
 ### Agent System
 
-OpenClaw uses **Pi** (by Mario Zechner) as the agent runtime:
+IdleHands uses **Pi** (by Mario Zechner) as the agent runtime:
 
 ```
 User Message → Gateway → Pi Agent Runtime → Tool Execution → Response
@@ -154,8 +154,8 @@ User Message → Gateway → Pi Agent Runtime → Tool Execution → Response
 
 **Agent workspaces:**
 
-- Default: `~/.openclaw/workspace`
-- Per-agent: `~/.openclaw/agents/<agentId>/workspace`
+- Default: `~/.idlehands/workspace`
+- Per-agent: `~/.idlehands/agents/<agentId>/workspace`
 - Injected files: `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `USER.md`, `IDENTITY.md`
 
 ### Channel Plugin System
@@ -185,7 +185,7 @@ interface ChannelPlugin {
 
 - `src/channels/plugins/index.ts` — Plugin registry
 - `src/channels/plugins/types.ts` — Adapter interfaces
-- `extensions/*/openclaw.plugin.json` — Plugin manifests
+- `extensions/*/idlehands.plugin.json` — Plugin manifests
 
 ### Tools
 
@@ -286,7 +286,7 @@ const schema = Type.Object({
 - Framework: Vitest
 - Colocated tests: `*.test.ts` alongside source
 - E2E tests: `*.e2e.test.ts` in `test/`
-- Live tests: `OPENCLAW_LIVE_TEST=1 pnpm test:live`
+- Live tests: `IDLEHANDS_LIVE_TEST=1 pnpm test:live`
 
 ## Common Tasks
 
@@ -300,7 +300,7 @@ const schema = Type.Object({
 
 1. Create extension in `extensions/<channel>/`
 2. Implement `ChannelPlugin` interface
-3. Add `openclaw.plugin.json` manifest
+3. Add `idlehands.plugin.json` manifest
 4. Export from `extensions/<channel>/index.ts`
 
 ### Adding a new skill
@@ -322,20 +322,20 @@ Minimal config:
 }
 ```
 
-Full reference: https://docs.openclaw.ai/gateway/configuration
+Full reference: https://docs.idlehands.ai/gateway/configuration
 
 ## CLI Commands
 
 ```bash
-openclaw onboard          # Setup wizard
-openclaw gateway run      # Run gateway
-openclaw agent            # Chat with agent
-openclaw message send     # Send message
-openclaw channels status  # Channel health
-openclaw doctor           # Diagnose issues
-openclaw config set       # Update config
-openclaw skills list      # List skills
-openclaw nodes list       # List paired nodes
+idlehands onboard          # Setup wizard
+idlehands gateway run      # Run gateway
+idlehands agent            # Chat with agent
+idlehands message send     # Send message
+idlehands channels status  # Channel health
+idlehands doctor           # Diagnose issues
+idlehands config set       # Update config
+idlehands skills list      # List skills
+idlehands nodes list       # List paired nodes
 ```
 
 ## Security Model
@@ -382,7 +382,7 @@ Key dependencies:
 
 ## Links
 
-- **Docs:** https://docs.openclaw.ai
-- **GitHub:** https://github.com/openclaw/openclaw
+- **Docs:** https://docs.idlehands.ai
+- **GitHub:** https://github.com/idlehands/idlehands
 - **Discord:** https://discord.gg/clawd
 - **ClawHub (skills):** https://clawhub.com

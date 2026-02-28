@@ -97,15 +97,15 @@ describe("daemon-cli coverage", () => {
 
   beforeEach(() => {
     envSnapshot = captureEnv([
-      "OPENCLAW_STATE_DIR",
-      "OPENCLAW_CONFIG_PATH",
-      "OPENCLAW_GATEWAY_PORT",
-      "OPENCLAW_PROFILE",
+      "IDLEHANDS_STATE_DIR",
+      "IDLEHANDS_CONFIG_PATH",
+      "IDLEHANDS_GATEWAY_PORT",
+      "IDLEHANDS_PROFILE",
     ]);
-    process.env.OPENCLAW_STATE_DIR = "/tmp/openclaw-cli-state";
-    process.env.OPENCLAW_CONFIG_PATH = "/tmp/openclaw-cli-state/openclaw.json";
-    delete process.env.OPENCLAW_GATEWAY_PORT;
-    delete process.env.OPENCLAW_PROFILE;
+    process.env.IDLEHANDS_STATE_DIR = "/tmp/idlehands-cli-state";
+    process.env.IDLEHANDS_CONFIG_PATH = "/tmp/idlehands-cli-state/idlehands.json";
+    delete process.env.IDLEHANDS_GATEWAY_PORT;
+    delete process.env.IDLEHANDS_PROFILE;
     serviceReadCommand.mockResolvedValue(null);
   });
 
@@ -133,12 +133,12 @@ describe("daemon-cli coverage", () => {
     serviceReadCommand.mockResolvedValueOnce({
       programArguments: ["/bin/node", "cli", "gateway", "--port", "19001"],
       environment: {
-        OPENCLAW_PROFILE: "dev",
-        OPENCLAW_STATE_DIR: "/tmp/openclaw-daemon-state",
-        OPENCLAW_CONFIG_PATH: "/tmp/openclaw-daemon-state/openclaw.json",
-        OPENCLAW_GATEWAY_PORT: "19001",
+        IDLEHANDS_PROFILE: "dev",
+        IDLEHANDS_STATE_DIR: "/tmp/idlehands-daemon-state",
+        IDLEHANDS_CONFIG_PATH: "/tmp/idlehands-daemon-state/idlehands.json",
+        IDLEHANDS_GATEWAY_PORT: "19001",
       },
-      sourcePath: "/tmp/ai.openclaw.gateway.plist",
+      sourcePath: "/tmp/ai.idlehands.gateway.plist",
     });
 
     await runDaemonCommand(["daemon", "status", "--json"]);

@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-  namespace = "ai.openclaw.android.benchmark"
+  namespace = "ai.idlehands.android.benchmark"
   compileSdk = 36
 
   defaultConfig {

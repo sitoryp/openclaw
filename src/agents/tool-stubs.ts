@@ -1,5 +1,5 @@
-// Tool stub schema utilities for OpenClaw
-// This file will be copied to ~/repos/openclaw/src/agents/tool-stubs.ts
+// Tool stub schema utilities for IdleHands
+// This file will be copied to ~/repos/idlehands/src/agents/tool-stubs.ts
 
 import type { ToolStubModeConfig } from "../config/types.tools.js";
 import type { AnyAgentTool } from "./pi-tools.types.js";

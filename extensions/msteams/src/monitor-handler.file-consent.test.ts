@@ -1,4 +1,4 @@
-import type { OpenClawConfig, PluginRuntime, RuntimeEnv } from "openclaw/plugin-sdk";
+import type { IdleHandsConfig, PluginRuntime, RuntimeEnv } from "idlehands/plugin-sdk";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { MSTeamsConversationStore } from "./conversation-store.js";
 import type { MSTeamsAdapter } from "./messenger.js";
@@ -56,7 +56,7 @@ function createDeps(): MSTeamsMessageHandlerDeps {
     recordVote: async () => null,
   };
   return {
-    cfg: {} as OpenClawConfig,
+    cfg: {} as IdleHandsConfig,
     runtime: {
       error: vi.fn(),
     } as unknown as RuntimeEnv,

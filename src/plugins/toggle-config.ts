@@ -1,15 +1,15 @@
 import { normalizeChatChannelId } from "../channels/registry.js";
-import type { OpenClawConfig } from "../config/config.js";
+import type { IdleHandsConfig } from "../config/config.js";
 
 export function setPluginEnabledInConfig(
-  config: OpenClawConfig,
+  config: IdleHandsConfig,
   pluginId: string,
   enabled: boolean,
-): OpenClawConfig {
+): IdleHandsConfig {
   const builtInChannelId = normalizeChatChannelId(pluginId);
   const resolvedId = builtInChannelId ?? pluginId;
 
-  const next: OpenClawConfig = {
+  const next: IdleHandsConfig = {
     ...config,
     plugins: {
       ...config.plugins,

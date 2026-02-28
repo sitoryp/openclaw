@@ -3,7 +3,7 @@ import type {
   DmConfig,
   DmPolicy,
   GroupPolicy,
-} from "openclaw/plugin-sdk";
+} from "idlehands/plugin-sdk";
 
 export type { DmPolicy, GroupPolicy };
 

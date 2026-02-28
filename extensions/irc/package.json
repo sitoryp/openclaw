@@ -1,9 +1,9 @@
 {
-  "name": "@openclaw/irc",
+  "name": "@idlehands/irc",
   "version": "2026.2.27",
-  "description": "OpenClaw IRC channel plugin",
+  "description": "IdleHands IRC channel plugin",
   "type": "module",
-  "openclaw": {
+  "idlehands": {
     "extensions": [
       "./index.ts"
     ]

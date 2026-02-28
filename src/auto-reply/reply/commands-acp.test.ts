@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AcpRuntimeError } from "../../acp/runtime/errors.js";
-import type { OpenClawConfig } from "../../config/config.js";
+import type { IdleHandsConfig } from "../../config/config.js";
 import type { SessionBindingRecord } from "../../infra/outbound/session-binding-service.js";
 
 const hoisted = vi.hoisted(() => {
@@ -158,9 +158,9 @@ const baseCfg = {
       },
     },
   },
-} satisfies OpenClawConfig;
+} satisfies IdleHandsConfig;
 
-function createDiscordParams(commandBody: string, cfg: OpenClawConfig = baseCfg) {
+function createDiscordParams(commandBody: string, cfg: IdleHandsConfig = baseCfg) {
   const params = buildCommandTestParams(commandBody, cfg, {
     Provider: "discord",
     Surface: "discord",
@@ -370,7 +370,7 @@ describe("/acp command", () => {
           },
         },
       },
-    } satisfies OpenClawConfig;
+    } satisfies IdleHandsConfig;
 
     const params = createDiscordParams("/acp spawn codex", cfg);
     const result = await handleAcpCommand(params, true);
@@ -474,7 +474,7 @@ describe("/acp command", () => {
         ...baseCfg.acp,
         dispatch: { enabled: false },
       },
-    } satisfies OpenClawConfig;
+    } satisfies IdleHandsConfig;
     const params = createDiscordParams("/acp steer tighten logging", cfg);
     const result = await handleAcpCommand(params, true);
     expect(result?.reply?.text).toContain("ACP dispatch is disabled by policy");

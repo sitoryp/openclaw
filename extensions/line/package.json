@@ -1,10 +1,10 @@
 {
-  "name": "@openclaw/line",
+  "name": "@idlehands/line",
   "version": "2026.2.27",
   "private": true,
-  "description": "OpenClaw LINE channel plugin",
+  "description": "IdleHands LINE channel plugin",
   "type": "module",
-  "openclaw": {
+  "idlehands": {
     "extensions": [
       "./index.ts"
     ],
@@ -19,7 +19,7 @@
       "quickstartAllowFrom": true
     },
     "install": {
-      "npmSpec": "@openclaw/line",
+      "npmSpec": "@idlehands/line",
       "localPath": "extensions/line",
       "defaultChoice": "npm"
     }

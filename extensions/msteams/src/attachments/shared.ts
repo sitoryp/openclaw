@@ -2,8 +2,8 @@ import {
   buildHostnameAllowlistPolicyFromSuffixAllowlist,
   isHttpsUrlAllowedByHostnameSuffixAllowlist,
   normalizeHostnameSuffixAllowlist,
-} from "openclaw/plugin-sdk";
-import type { SsrFPolicy } from "openclaw/plugin-sdk";
+} from "idlehands/plugin-sdk";
+import type { SsrFPolicy } from "idlehands/plugin-sdk";
 import type { MSTeamsAttachmentLike } from "./types.js";
 
 type InlineImageCandidate =

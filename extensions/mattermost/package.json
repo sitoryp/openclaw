@@ -1,9 +1,9 @@
 {
-  "name": "@openclaw/mattermost",
+  "name": "@idlehands/mattermost",
   "version": "2026.2.27",
-  "description": "OpenClaw Mattermost channel plugin",
+  "description": "IdleHands Mattermost channel plugin",
   "type": "module",
-  "openclaw": {
+  "idlehands": {
     "extensions": [
       "./index.ts"
     ],
@@ -17,7 +17,7 @@
       "order": 65
     },
     "install": {
-      "npmSpec": "@openclaw/mattermost",
+      "npmSpec": "@idlehands/mattermost",
       "localPath": "extensions/mattermost",
       "defaultChoice": "npm"
     }

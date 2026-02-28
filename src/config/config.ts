@@ -21,4 +21,4 @@ export {
   validateConfigObjectRawWithPlugins,
   validateConfigObjectWithPlugins,
 } from "./validation.js";
-export { OpenClawSchema } from "./zod-schema.js";
+export { IdleHandsSchema } from "./zod-schema.js";

@@ -32,7 +32,7 @@ export type ProgressStreamAdapter = {
     toolCallId?: string;
     args?: unknown;
   }) => void;
-  /** Callback for onToolResult events - accepts ReplyPayload shape from OpenClaw */
+  /** Callback for onToolResult events - accepts ReplyPayload shape from IdleHands */
   onToolResult: (payload: { text?: string; mediaUrls?: string[] }) => void;
   /** Callback for onPartialReply - updates assistant text buffer */
   onPartialReply: (payload: { text?: string }) => void;
@@ -67,7 +67,7 @@ export function createProgressStreamAdapter(
   const hooks = stream.hooks();
   const timeoutMs = opts.timeoutMs;
 
-  // Track last tool for result matching (OpenClaw doesnt pass toolCallId in onToolResult)
+  // Track last tool for result matching (IdleHands doesnt pass toolCallId in onToolResult)
   let lastToolName = "tool";
   let lastToolCallId = "";
   let firstDeltaCalled = false;
@@ -99,7 +99,7 @@ export function createProgressStreamAdapter(
     },
 
     onToolResult: (payload) => {
-      // Use tracked tool info since OpenClaw onToolResult only passes { text, mediaUrls }
+      // Use tracked tool info since IdleHands onToolResult only passes { text, mediaUrls }
       const name = lastToolName;
       const toolCallId = lastToolCallId;
 
@@ -114,7 +114,7 @@ export function createProgressStreamAdapter(
       hooks.onToolResult?.({
         id: toolCallId,
         name,
-        success: true, // OpenClaw doesnt pass success status
+        success: true, // IdleHands doesnt pass success status
         summary,
       });
 

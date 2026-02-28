@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: openclaw
+    name: idlehands
     runtime: docker
     plan: starter
     healthCheckPath: /health
@@ -9,13 +9,13 @@ services:
         value: "8080"
       - key: SETUP_PASSWORD
         sync: false
-      - key: OPENCLAW_STATE_DIR
-        value: /data/.openclaw
-      - key: OPENCLAW_WORKSPACE_DIR
+      - key: IDLEHANDS_STATE_DIR
+        value: /data/.idlehands
+      - key: IDLEHANDS_WORKSPACE_DIR
         value: /data/workspace
-      - key: OPENCLAW_GATEWAY_TOKEN
+      - key: IDLEHANDS_GATEWAY_TOKEN
         generateValue: true
     disk:
-      name: openclaw-data
+      name: idlehands-data
       mountPath: /data
       sizeGB: 1

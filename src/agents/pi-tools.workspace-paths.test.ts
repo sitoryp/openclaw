@@ -2,8 +2,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import type { OpenClawConfig } from "../config/config.js";
-import { createOpenClawCodingTools } from "./pi-tools.js";
+import type { IdleHandsConfig } from "../config/config.js";
+import { createIdleHandsCodingTools } from "./pi-tools.js";
 import { createHostSandboxFsBridge } from "./test-helpers/host-sandbox-fs-bridge.js";
 import { expectReadWriteEditTools, getTextContent } from "./test-helpers/pi-tools-fs-helpers.js";
 import { createPiToolsSandboxContext } from "./test-helpers/pi-tools-sandbox-context.js";
@@ -23,11 +23,11 @@ async function withTempDir<T>(prefix: string, fn: (dir: string) => Promise<T>) {
 
 describe("workspace path resolution", () => {
   it("resolves relative read/write/edit paths against workspaceDir even after cwd changes", async () => {
-    await withTempDir("openclaw-ws-", async (workspaceDir) => {
-      await withTempDir("openclaw-cwd-", async (otherDir) => {
+    await withTempDir("idlehands-ws-", async (workspaceDir) => {
+      await withTempDir("idlehands-cwd-", async (otherDir) => {
         const cwdSpy = vi.spyOn(process, "cwd").mockReturnValue(otherDir);
         try {
-          const tools = createOpenClawCodingTools({ workspaceDir });
+          const tools = createIdleHandsCodingTools({ workspaceDir });
           const { readTool, writeTool, editTool } = expectReadWriteEditTools(tools);
 
           const readFile = "read.txt";
@@ -49,10 +49,10 @@ describe("workspace path resolution", () => {
           await editTool.execute("ws-edit", {
             path: editFile,
             oldText: "world",
-            newText: "openclaw",
+            newText: "idlehands",
           });
           expect(await fs.readFile(path.join(workspaceDir, editFile), "utf8")).toBe(
-            "hello openclaw",
+            "hello idlehands",
           );
         } finally {
           cwdSpy.mockRestore();
@@ -62,14 +62,14 @@ describe("workspace path resolution", () => {
   });
 
   it("allows deletion edits with empty newText", async () => {
-    await withTempDir("openclaw-ws-", async (workspaceDir) => {
-      await withTempDir("openclaw-cwd-", async (otherDir) => {
+    await withTempDir("idlehands-ws-", async (workspaceDir) => {
+      await withTempDir("idlehands-cwd-", async (otherDir) => {
         const testFile = "delete.txt";
         await fs.writeFile(path.join(workspaceDir, testFile), "hello world", "utf8");
 
         const cwdSpy = vi.spyOn(process, "cwd").mockReturnValue(otherDir);
         try {
-          const tools = createOpenClawCodingTools({ workspaceDir });
+          const tools = createIdleHandsCodingTools({ workspaceDir });
           const { editTool } = expectReadWriteEditTools(tools);
 
           await editTool.execute("ws-edit-delete", {
@@ -87,8 +87,8 @@ describe("workspace path resolution", () => {
   });
 
   it("defaults exec cwd to workspaceDir when workdir is omitted", async () => {
-    await withTempDir("openclaw-ws-", async (workspaceDir) => {
-      const tools = createOpenClawCodingTools({
+    await withTempDir("idlehands-ws-", async (workspaceDir) => {
+      const tools = createIdleHandsCodingTools({
         workspaceDir,
         exec: { host: "gateway", ask: "off", security: "full" },
       });
@@ -112,9 +112,9 @@ describe("workspace path resolution", () => {
   });
 
   it("lets exec workdir override the workspace default", async () => {
-    await withTempDir("openclaw-ws-", async (workspaceDir) => {
-      await withTempDir("openclaw-override-", async (overrideDir) => {
-        const tools = createOpenClawCodingTools({
+    await withTempDir("idlehands-ws-", async (workspaceDir) => {
+      await withTempDir("idlehands-override-", async (overrideDir) => {
+        const tools = createIdleHandsCodingTools({
           workspaceDir,
           exec: { host: "gateway", ask: "off", security: "full" },
         });
@@ -140,12 +140,12 @@ describe("workspace path resolution", () => {
   });
 
   it("rejects @-prefixed absolute paths outside workspace when workspaceOnly is enabled", async () => {
-    await withTempDir("openclaw-ws-", async (workspaceDir) => {
-      const cfg: OpenClawConfig = { tools: { fs: { workspaceOnly: true } } };
-      const tools = createOpenClawCodingTools({ workspaceDir, config: cfg });
+    await withTempDir("idlehands-ws-", async (workspaceDir) => {
+      const cfg: IdleHandsConfig = { tools: { fs: { workspaceOnly: true } } };
+      const tools = createIdleHandsCodingTools({ workspaceDir, config: cfg });
       const { readTool } = expectReadWriteEditTools(tools);
 
-      const outsideAbsolute = path.resolve(path.parse(workspaceDir).root, "outside-openclaw.txt");
+      const outsideAbsolute = path.resolve(path.parse(workspaceDir).root, "outside-idlehands.txt");
       await expect(
         readTool.execute("ws-read-at-prefix", { path: `@${outsideAbsolute}` }),
       ).rejects.toThrow(/Path escapes sandbox root/i);
@@ -156,9 +156,9 @@ describe("workspace path resolution", () => {
     if (process.platform === "win32") {
       return;
     }
-    await withTempDir("openclaw-ws-", async (workspaceDir) => {
-      const cfg: OpenClawConfig = { tools: { fs: { workspaceOnly: true } } };
-      const tools = createOpenClawCodingTools({ workspaceDir, config: cfg });
+    await withTempDir("idlehands-ws-", async (workspaceDir) => {
+      const cfg: IdleHandsConfig = { tools: { fs: { workspaceOnly: true } } };
+      const tools = createIdleHandsCodingTools({ workspaceDir, config: cfg });
       const { readTool, writeTool } = expectReadWriteEditTools(tools);
       const outsidePath = path.join(
         path.dirname(workspaceDir),
@@ -195,8 +195,8 @@ describe("workspace path resolution", () => {
 
 describe("sandboxed workspace paths", () => {
   it("uses sandbox workspace for relative read/write/edit", async () => {
-    await withTempDir("openclaw-sandbox-", async (sandboxDir) => {
-      await withTempDir("openclaw-workspace-", async (workspaceDir) => {
+    await withTempDir("idlehands-sandbox-", async (sandboxDir) => {
+      await withTempDir("idlehands-workspace-", async (workspaceDir) => {
         const sandbox = createPiToolsSandboxContext({
           workspaceDir: sandboxDir,
           agentWorkspaceDir: workspaceDir,
@@ -209,7 +209,7 @@ describe("sandboxed workspace paths", () => {
         await fs.writeFile(path.join(sandboxDir, testFile), "sandbox read", "utf8");
         await fs.writeFile(path.join(workspaceDir, testFile), "workspace read", "utf8");
 
-        const tools = createOpenClawCodingTools({ workspaceDir, sandbox });
+        const tools = createIdleHandsCodingTools({ workspaceDir, sandbox });
         const { readTool, writeTool, editTool } = expectReadWriteEditTools(tools);
 
         const result = await readTool?.execute("sbx-read", { path: testFile });

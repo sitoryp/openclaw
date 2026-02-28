@@ -1,6 +1,6 @@
 # llama-server Configuration Template
 
-Recommended configuration for running llama-server with OpenClaw, optimized for hybrid Mamba-Transformer models (like Qwen3-Coder) with large context windows.
+Recommended configuration for running llama-server with IdleHands, optimized for hybrid Mamba-Transformer models (like Qwen3-Coder) with large context windows.
 
 ## Basic Command
 
@@ -74,7 +74,7 @@ llama-server \
 
 ```ini
 [Unit]
-Description=llama-server for OpenClaw
+Description=llama-server for IdleHands
 After=network.target
 
 [Service]
@@ -113,7 +113,7 @@ For a 200k context per slot with 4 slots:
 
 ## Slot Affinity
 
-OpenClaw supports slot affinity to keep sessions pinned to specific slots, maximizing cache hits. Enable in your OpenClaw config:
+IdleHands supports slot affinity to keep sessions pinned to specific slots, maximizing cache hits. Enable in your IdleHands config:
 
 ```json
 {
@@ -132,7 +132,7 @@ OpenClaw supports slot affinity to keep sessions pinned to specific slots, maxim
 
 ## Performance Tips
 
-1. **Disable tool result truncation** - Set `toolResultTruncation: "off"` in OpenClaw to prevent cache invalidation
+1. **Disable tool result truncation** - Set `toolResultTruncation: "off"` in IdleHands to prevent cache invalidation
 2. **Use quantized KV cache** - `-ctk q4_0 -ctv q4_0` significantly reduces VRAM with minimal quality loss
 3. **Match slot count** - Ensure `-np` matches your `slotAffinity.numSlots`
 4. **Monitor with /slots** - Check slot usage and cache status via the `/slots` endpoint

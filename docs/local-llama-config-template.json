@@ -1,6 +1,6 @@
 {
-  "$schema": "https://docs.openclaw.ai/config-schema.json",
-  "_comment": "OpenClaw config template for local llama-server with hybrid Mamba-Transformer models",
+  "$schema": "https://docs.idlehands.ai/config-schema.json",
+  "_comment": "IdleHands config template for local llama-server with hybrid Mamba-Transformer models",
   "_llama_server_flags": "--ctx-checkpoints 0 --cache-reuse 64 -np 4",
 
   "models": {
