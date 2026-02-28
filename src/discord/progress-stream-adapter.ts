@@ -22,7 +22,7 @@ export type ProgressStreamAdapter = {
   /** The underlying progress stream */
   stream: DiscordProgressStream;
   /** Start tracking progress */
-  start: () => void;
+  start: () => Promise<void>;
   /** Stop tracking (but don't finalize) */
   stop: () => void;
   /** Callback for onToolStart events */
@@ -78,8 +78,8 @@ export function createProgressStreamAdapter(
   return {
     stream,
 
-    start: () => {
-      stream.start();
+    start: async () => {
+      await stream.start();
     },
 
     stop: () => {

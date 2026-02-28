@@ -55,6 +55,7 @@ export class DiscordProgressStream {
   private banner: string | null = null;
   private dirty = true;
   private finalized = false;
+  private messageId: string | null = null;
 
   constructor(
     placeholder: { id: string } | null,
@@ -87,24 +88,48 @@ export class DiscordProgressStream {
   }
 
   /** Start tracking progress and editing the placeholder message */
-  start(): void {
+  async start(): Promise<void> {
     if (this.scheduler || this.finalized) {
       return;
     }
 
     this.progress.start();
 
-    if (this.placeholder) {
+    // Use existing placeholder or create a new message
+    let targetMessageId = this.placeholder?.id ?? null;
+
+    if (!targetMessageId) {
+      // Create initial progress message
+      try {
+        const initialContent = this.render();
+        const response = (await this.rest.post(Routes.channelMessages(this.channelId), {
+          body: { content: initialContent || "⏳ Working..." },
+        })) as { id: string };
+        targetMessageId = response.id;
+        console.log("[progress-stream] Created initial message:", targetMessageId);
+      } catch (err) {
+        console.error("[progress-stream] Failed to create initial message:", err);
+        return;
+      }
+    }
+
+    this.messageId = targetMessageId;
+
+    if (this.messageId) {
       this.scheduler = new MessageEditScheduler(
         {
           render: () => this.render(),
           apply: async (text) => {
-            if (!this.placeholder) {
+            if (!this.messageId) {
               return;
             }
-            await this.rest.patch(Routes.channelMessage(this.channelId, this.placeholder.id), {
-              body: { content: text },
-            });
+            try {
+              await this.rest.patch(Routes.channelMessage(this.channelId, this.messageId), {
+                body: { content: text },
+              });
+            } catch (err) {
+              console.error("[progress-stream] Failed to edit message:", err);
+            }
           },
           isDirty: () => this.dirty,
           clearDirty: () => {

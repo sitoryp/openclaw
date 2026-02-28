@@ -456,6 +456,13 @@ export async function processDiscordMessage(ctx: DiscordMessagePreflightContext)
 
   // --- Progress stream (IdleHands-style tool history block) ---
   const useProgressMode = discordConfig?.progressMode === true;
+  console.log("[progress-debug] check:", {
+    progressMode: discordConfig?.progressMode,
+    useProgressMode,
+    canStreamDraft,
+    discordStreamMode,
+    accountBlockStreamingEnabled,
+  });
   const progressAdapter =
     useProgressMode && canStreamDraft
       ? createProgressStreamAdapter({
@@ -470,7 +477,7 @@ export async function processDiscordMessage(ctx: DiscordMessagePreflightContext)
         })
       : undefined;
   if (progressAdapter) {
-    progressAdapter.start();
+    await progressAdapter.start();
   }
   const draftChunking =
     draftStream && discordStreamMode === "block"

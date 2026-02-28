@@ -126,9 +126,14 @@ export function renderProgressMarkdown(input: ProgressRenderInput, opts?: Render
       statParts.push(`${snap.totalToolCalls} tools`);
     }
 
-    const totalTok = snap.totalPromptTokens + snap.totalCompletionTokens;
-    if (totalTok > 0) {
-      statParts.push(`${formatTokens(totalTok)} tokens`);
+    // Show context size (prompt tokens)
+    if (snap.totalPromptTokens > 0) {
+      statParts.push(`ctx: ${formatTokens(snap.totalPromptTokens)}`);
+    }
+
+    // Show completion tokens generated
+    if (snap.totalCompletionTokens > 0) {
+      statParts.push(`+${formatTokens(snap.totalCompletionTokens)} gen`);
     }
 
     // Show generation speed if available
