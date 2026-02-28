@@ -216,6 +216,8 @@ export type DiscordAccountConfig = {
   chunkMode?: "length" | "newline";
   /** Disable block streaming for this account. */
   blockStreaming?: boolean;
+  /** Enable IdleHands-style progress display with tool history block. */
+  progressMode?: boolean;
   /**
    * Live stream preview mode:
    * - "off": disable preview updates
