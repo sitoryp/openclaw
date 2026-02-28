@@ -357,7 +357,11 @@ export async function runAgentTurnWithFallback(params: {
                 const name = typeof evt.data.name === "string" ? evt.data.name : undefined;
                 if (phase === "start" || phase === "update") {
                   await params.typingSignals.signalToolStart();
-                  await params.opts?.onToolStart?.({ name, phase });
+                  const args =
+                    typeof evt.data.args === "object" && evt.data.args
+                      ? (evt.data.args as Record<string, unknown>)
+                      : undefined;
+                  await params.opts?.onToolStart?.({ name, phase, args });
                 }
               }
               // Track auto-compaction completion
@@ -366,6 +370,18 @@ export async function runAgentTurnWithFallback(params: {
                 if (phase === "end") {
                   autoCompactionCompleted = true;
                 }
+              }
+              // Emit usage update for progress tracking
+              if (evt.stream === "usage") {
+                const input = typeof evt.data.input === "number" ? evt.data.input : 0;
+                const output = typeof evt.data.output === "number" ? evt.data.output : 0;
+                const cacheRead = typeof evt.data.cacheRead === "number" ? evt.data.cacheRead : 0;
+                params.opts?.onUsageUpdate?.({
+                  promptTokens: input + cacheRead,
+                  completionTokens: output,
+                  turn: 1,
+                  toolCalls: 0,
+                });
               }
             },
             // Always pass onBlockReply so flushBlockReplyBuffer works before tool execution,

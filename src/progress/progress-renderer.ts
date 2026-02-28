@@ -127,8 +127,14 @@ export function renderProgressMarkdown(input: ProgressRenderInput, opts?: Render
     }
 
     // Show context size (prompt tokens)
-    if (snap.totalPromptTokens > 0) {
-      statParts.push(`ctx: ${formatTokens(snap.totalPromptTokens)}`);
+    if (snap.contextTokens) {
+      statParts.push(`ctx: ${formatTokens(snap.contextTokens)}`);
+    }
+
+    // Show total tokens (accumulated prompt + completion)
+    const totalTokens = snap.totalPromptTokens + snap.totalCompletionTokens;
+    if (totalTokens > 0) {
+      statParts.push(`total: ${formatTokens(totalTokens)}`);
     }
 
     // Show completion tokens generated

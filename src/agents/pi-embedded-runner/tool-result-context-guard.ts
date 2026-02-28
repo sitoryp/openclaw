@@ -274,11 +274,17 @@ function enforceToolResultContextBudgetInPlace(params: {
   const { messages, contextBudgetChars, maxSingleToolResultChars } = params;
 
   // Ensure each tool result has an upper bound before considering total context usage.
+  let _truncatedCount = 0;
   for (const message of messages) {
     if (!isToolResultMessage(message)) {
       continue;
     }
+    const beforeTrunc = estimateMessageChars(message);
     const truncated = truncateToolResultToChars(message, maxSingleToolResultChars);
+    if (truncated !== message) {
+      _truncatedCount++;
+      console.log(`DEBUG truncated tool: before=${beforeTrunc} limit=${maxSingleToolResultChars}`);
+    }
     applyMessageMutationInPlace(message, truncated);
   }
 
@@ -321,11 +327,16 @@ export function installToolResultContextGuard(params: {
       : messages;
 
     const contextMessages = Array.isArray(transformed) ? transformed : messages;
+    const beforeChars = contextMessages.reduce((sum, m) => sum + JSON.stringify(m).length, 0);
     enforceToolResultContextBudgetInPlace({
       messages: contextMessages,
       contextBudgetChars,
       maxSingleToolResultChars,
     });
+    const afterChars = contextMessages.reduce((sum, m) => sum + JSON.stringify(m).length, 0);
+    console.log(
+      `DEBUG transformContext: msgs=${contextMessages.length} beforeChars=${beforeChars} afterChars=${afterChars} diff=${beforeChars - afterChars}`,
+    );
 
     return contextMessages;
   }) as GuardableTransformContext;

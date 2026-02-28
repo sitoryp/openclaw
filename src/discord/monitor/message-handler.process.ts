@@ -752,6 +752,17 @@ export async function processDiscordMessage(ctx: DiscordMessagePreflightContext)
         onReasoningStream: async () => {
           await statusReactions.setThinking();
         },
+        onUsageUpdate: progressAdapter
+          ? (usage) => {
+              progressAdapter.onTurnEnd({
+                turn: usage.turn,
+                toolCalls: usage.toolCalls,
+                promptTokensTurn: usage.promptTokens,
+                completionTokensTurn: usage.completionTokens,
+                contextTokens: usage.promptTokens,
+              });
+            }
+          : undefined,
         onToolStart: async (payload) => {
           progressAdapter?.onToolStart(payload);
           await statusReactions.setTool(payload.name);

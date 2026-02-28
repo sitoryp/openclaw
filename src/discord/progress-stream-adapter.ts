@@ -23,7 +23,7 @@ export type ProgressStreamAdapter = {
   stream: DiscordProgressStream;
   /** Start tracking progress */
   start: () => Promise<void>;
-  /** Stop tracking (but don't finalize) */
+  /** Stop tracking (but dont finalize) */
   stop: () => void;
   /** Callback for onToolStart events */
   onToolStart: (payload: {
@@ -32,13 +32,8 @@ export type ProgressStreamAdapter = {
     toolCallId?: string;
     args?: unknown;
   }) => void;
-  /** Callback for onToolResult events (add this to replyOptions) */
-  onToolResult: (payload: {
-    name?: string;
-    success?: boolean;
-    summary?: string;
-    toolCallId?: string;
-  }) => void;
+  /** Callback for onToolResult events - accepts ReplyPayload shape from OpenClaw */
+  onToolResult: (payload: { text?: string; mediaUrls?: string[] }) => void;
   /** Callback for onPartialReply - updates assistant text buffer */
   onPartialReply: (payload: { text?: string }) => void;
   /** Callback for turn end stats */
@@ -72,8 +67,10 @@ export function createProgressStreamAdapter(
   const hooks = stream.hooks();
   const timeoutMs = opts.timeoutMs;
 
-  // Track tool call IDs to names for result matching
-  const toolCallNames = new Map<string, string>();
+  // Track last tool for result matching (OpenClaw doesnt pass toolCallId in onToolResult)
+  let lastToolName = "tool";
+  let lastToolCallId = "";
+  let firstDeltaCalled = false;
 
   return {
     stream,
@@ -90,7 +87,9 @@ export function createProgressStreamAdapter(
       const toolCallId = payload.toolCallId ?? `tool-${Date.now()}`;
       const name = payload.name ?? "tool";
 
-      toolCallNames.set(toolCallId, name);
+      // Track for result matching
+      lastToolName = name;
+      lastToolCallId = toolCallId;
 
       hooks.onToolCall?.({
         id: toolCallId,
@@ -100,23 +99,37 @@ export function createProgressStreamAdapter(
     },
 
     onToolResult: (payload) => {
-      const toolCallId = payload.toolCallId ?? "";
-      const name = payload.name ?? toolCallNames.get(toolCallId) ?? "tool";
+      // Use tracked tool info since OpenClaw onToolResult only passes { text, mediaUrls }
+      const name = lastToolName;
+      const toolCallId = lastToolCallId;
+
+      // Extract summary from text (tool results often have format "🔧 name: summary")
+      let summary = "done";
+      if (payload.text) {
+        // Try to extract just the summary part
+        const match = payload.text.match(/^🔧\s*\S+:\s*(.+)$/s);
+        summary = match ? match[1].trim().slice(0, 60) : payload.text.slice(0, 60);
+      }
 
       hooks.onToolResult?.({
         id: toolCallId,
         name,
-        success: payload.success ?? true,
-        summary: payload.summary ?? "done",
+        success: true, // OpenClaw doesnt pass success status
+        summary,
       });
 
-      toolCallNames.delete(toolCallId);
+      // Reset for next tool
+      lastToolName = "tool";
+      lastToolCallId = "";
     },
 
     onPartialReply: (payload) => {
       if (payload.text) {
+        if (!firstDeltaCalled) {
+          firstDeltaCalled = true;
+          hooks.onFirstDelta?.();
+        }
         // The progress stream tracks text internally via onToken
-        // But we can also just append to the buffer
         hooks.onToken?.(payload.text);
       }
     },
@@ -140,8 +153,8 @@ export function createProgressStreamAdapter(
     hasPlaceholder: () => Boolean(opts.placeholder),
 
     getMessageId: () => {
-      // The progress stream doesn't expose messageId directly
-      // We'd need to add that if needed
+      // The progress stream doesnt expose messageId directly
+      // Wed need to add that if needed
       return undefined;
     },
   };

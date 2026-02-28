@@ -139,6 +139,7 @@ export class TurnProgressController {
   private totalPromptTokens = 0;
   private totalCompletionTokens = 0;
   private lastTurnStats: TurnEndEvent | null = null;
+  private contextTokens = 0;
 
   constructor(sink: ProgressSink, opts?: TurnProgressOptions) {
     this.sink = sink;
@@ -205,6 +206,7 @@ export class TurnProgressController {
       totalToolCalls: this.totalToolCalls,
       totalPromptTokens: this.totalPromptTokens,
       totalCompletionTokens: this.totalCompletionTokens,
+      contextTokens: this.contextTokens || undefined,
       lastTurnStats: this.lastTurnStats ?? undefined,
     };
   }
@@ -215,11 +217,13 @@ export class TurnProgressController {
   ): string {
     const total = formatElapsed(elapsedBucket);
     const turnInfo = this.turnCount > 0 ? `T${this.turnCount}` : "";
-    const tokenInfo =
-      this.totalPromptTokens > 0
-        ? `${formatTokens(this.totalPromptTokens + this.totalCompletionTokens)} tok`
-        : "";
-    const stats = [turnInfo, tokenInfo].filter(Boolean).join(" · ");
+    // Context tokens (current window size)
+    const ctxInfo = this.contextTokens > 0 ? `${formatTokens(this.contextTokens)} ctx` : "";
+    // Completion tokens this turn
+    const turnGen = this.lastTurnStats?.completionTokensTurn
+      ? `+${formatTokens(this.lastTurnStats.completionTokensTurn)}`
+      : "";
+    const stats = [turnInfo, ctxInfo, turnGen].filter(Boolean).join(" · ");
     const statsSuffix = stats ? ` [${stats}]` : "";
 
     if (this.phase === "tool" && activeTool) {
@@ -275,6 +279,7 @@ export class TurnProgressController {
   }
 
   private onFirstDelta(): void {
+    this.turnCount++;
     this.markActivity();
     if (this.phase !== "tool") {
       this.phase = "responding";
@@ -290,7 +295,7 @@ export class TurnProgressController {
     this.activeTool = { name: call.name, summary, startedAt: Date.now() };
     this.phase = "tool";
 
-    this.pushToolLine(`◆ ${summary}...`);
+    this.pushToolLine(`◆ ${summary}`);
     this.emit(true);
   }
 
@@ -307,12 +312,15 @@ export class TurnProgressController {
 
   private onTurnEnd(stats: TurnEndEvent): void {
     this.markActivity();
-    this.turnCount = stats.turn;
+    this.turnCount++;
     this.lastTurnStats = stats;
 
     // Accumulate tokens
     if (stats.promptTokensTurn != null) {
       this.totalPromptTokens += stats.promptTokensTurn;
+    }
+    if (stats.contextTokens != null) {
+      this.contextTokens = stats.contextTokens;
     }
     if (stats.completionTokensTurn != null) {
       this.totalCompletionTokens += stats.completionTokensTurn;

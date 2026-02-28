@@ -506,6 +506,20 @@ export async function runReplyAgent(params: {
       cliSessionId,
     });
 
+    // Emit usage stats for progress tracking
+    if (opts?.onUsageUpdate && usage) {
+      const input = usage.input ?? 0;
+      const output = usage.output ?? 0;
+      const cacheRead = usage.cacheRead ?? 0;
+      const cacheWrite = usage.cacheWrite ?? 0;
+      opts.onUsageUpdate({
+        promptTokens: input + cacheRead + cacheWrite,
+        completionTokens: output,
+        turn: 1,
+        toolCalls: 0, // Tool count tracked separately by progress adapter
+      });
+    }
+
     // Drain any late tool/block deliveries before deciding there's "nothing to send".
     // Otherwise, a late typing trigger (e.g. from a tool callback) can outlive the run and
     // keep the typing indicator stuck.

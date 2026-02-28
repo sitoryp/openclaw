@@ -26,6 +26,8 @@ export type TurnEndEvent = {
   tgTps?: number;
   promptTokensTurn?: number;
   completionTokensTurn?: number;
+  /** Current context window usage (for local models) */
+  contextTokens?: number;
 };
 
 export type ToolStreamEvent = {
@@ -54,6 +56,8 @@ export type ProgressSnapshot = {
   totalPromptTokens: number;
   /** Total completion tokens generated */
   totalCompletionTokens: number;
+  /** Current context window size (for local models) */
+  contextTokens?: number;
   /** Stats from last turn end event */
   lastTurnStats?: TurnEndEvent;
 };

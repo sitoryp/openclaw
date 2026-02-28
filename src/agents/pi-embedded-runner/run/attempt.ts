@@ -744,6 +744,12 @@ export async function runEmbeddedAttempt(
         throw new Error("Embedded agent session missing");
       }
       const activeSession = session;
+      console.log(
+        "DEBUG contextWindowTokens:",
+        params.model.contextWindow,
+        params.model.maxTokens,
+        DEFAULT_CONTEXT_TOKENS,
+      );
       removeToolResultContextGuard = installToolResultContextGuard({
         agent: activeSession.agent,
         contextWindowTokens: Math.max(

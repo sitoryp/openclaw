@@ -260,7 +260,24 @@ export function handleMessageEnd(
 
   const assistantMessage = msg;
   ctx.noteLastAssistant(assistantMessage);
-  ctx.recordAssistantUsage((assistantMessage as { usage?: unknown }).usage);
+  const msgUsage = (
+    assistantMessage as {
+      usage?: { input?: number; output?: number; cacheRead?: number; cacheWrite?: number };
+    }
+  ).usage;
+  ctx.recordAssistantUsage(msgUsage);
+  // Emit usage event for progress tracking (per-message usage, not accumulated)
+  if (msgUsage) {
+    void ctx.params.onAgentEvent?.({
+      stream: "usage",
+      data: {
+        input: msgUsage.input ?? 0,
+        output: msgUsage.output ?? 0,
+        cacheRead: msgUsage.cacheRead ?? 0,
+        cacheWrite: msgUsage.cacheWrite ?? 0,
+      },
+    });
+  }
   promoteThinkingTagsToBlocks(assistantMessage);
 
   const rawText = extractAssistantText(assistantMessage);
