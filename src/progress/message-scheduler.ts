@@ -40,7 +40,8 @@ function defaultClassifyError(e: unknown): ClassifiedError {
 
   // Discord rate limit
   if (status === 429) {
-    const retryAfter = ((err?.retryAfter ?? err?.data?.retry_after) as number) ?? 5;
+    const retryAfter =
+      ((err?.retryAfter ?? (err?.data as Record<string, unknown>)?.retry_after) as number) ?? 5;
     return { kind: "retry", retryAfterMs: retryAfter * 1000, message: msg };
   }
 
