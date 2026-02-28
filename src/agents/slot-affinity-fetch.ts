@@ -5,7 +5,7 @@
  * based on session-to-slot mapping.
  */
 
-let originalFetch: typeof fetch | null = null;
+let originalFetch: typeof globalThis.fetch | null = null;
 let isInstalled = false;
 let targetBaseUrl: string | null = null;
 
@@ -23,7 +23,7 @@ export function installSlotAffinityFetch(llamaServerBaseUrl: string): void {
   originalFetch = globalThis.fetch;
   targetBaseUrl = llamaServerBaseUrl.replace(/\/+$/, "");
 
-  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const wrappedFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 
     // Only intercept llama-server chat completion requests
@@ -59,6 +59,12 @@ export function installSlotAffinityFetch(llamaServerBaseUrl: string): void {
 
     return originalFetch!(input, init);
   };
+
+  // Copy over any additional properties from original fetch (like preconnect)
+  // Using Object.assign to preserve the function while adding properties
+  Object.assign(wrappedFetch, originalFetch);
+
+  globalThis.fetch = wrappedFetch as typeof globalThis.fetch;
 
   isInstalled = true;
   console.log(`[slot-affinity] Fetch interceptor installed for ${targetBaseUrl}`);
