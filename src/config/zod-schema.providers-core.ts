@@ -426,6 +426,7 @@ export const DiscordAccountSchema = z
     // Canonical streaming mode. Legacy aliases (`streamMode`, boolean `streaming`) are auto-mapped.
     streaming: z.union([z.boolean(), z.enum(["off", "partial", "block", "progress"])]).optional(),
     streamMode: z.enum(["partial", "block", "off"]).optional(),
+    progressMode: z.boolean().optional(),
     draftChunk: BlockStreamingChunkSchema.optional(),
     maxLinesPerMessage: z.number().int().positive().optional(),
     mediaMaxMb: z.number().positive().optional(),
