@@ -202,6 +202,24 @@ const coreEntries: CoreCliEntry[] = [
       mod.registerBrowserCli(program);
     },
   },
+  {
+    commands: [
+      {
+        name: "orchestrator",
+        description: "Runtime orchestration (plan/apply/status)",
+        hasSubcommands: true,
+      },
+      {
+        name: "anton",
+        description: "Autonomous checklist runner",
+        hasSubcommands: true,
+      },
+    ],
+    register: async ({ program }) => {
+      const mod = await import("./register.orchestrator-anton.js");
+      mod.registerOrchestratorAntonCommands(program);
+    },
+  },
 ];
 
 function collectCoreCliCommandNames(predicate?: (command: CoreCliCommandDescriptor) => boolean) {
