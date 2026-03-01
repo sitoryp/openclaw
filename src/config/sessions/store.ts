@@ -977,8 +977,10 @@ async function withSessionStoreLock<T>(
       `withSessionStoreLock: storePath must be a non-empty string, got ${JSON.stringify(storePath)}`,
     );
   }
-  const timeoutMs = opts.timeoutMs ?? 10_000;
-  const staleMs = opts.staleMs ?? 30_000;
+  // Keep lock timeout longer than stale threshold so stale live locks can be reclaimed
+  // within a single wait cycle (prevents 10s timeout vs 30s stale deadlock pattern).
+  const timeoutMs = opts.timeoutMs ?? 30_000;
+  const staleMs = opts.staleMs ?? 10_000;
   // `pollIntervalMs` is retained for API compatibility with older lock options.
   void opts.pollIntervalMs;
 

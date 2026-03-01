@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { listAgentIds } from "../../agents/agent-scope.js";
+// listAgentIds import removed: --session-id no longer does reverse lookup by id.
 import type { MsgContext } from "../../auto-reply/templating.js";
 import {
   normalizeThinkLevel,
@@ -65,44 +65,9 @@ export function resolveSessionKeyForRequest(opts: {
   let sessionKey: string | undefined =
     explicitSessionKey ?? (ctx ? resolveSessionKey(scope, ctx, mainKey) : undefined);
 
-  // If a session id was provided, prefer to re-use its entry (by id) even when no key was derived.
-  if (
-    !explicitSessionKey &&
-    opts.sessionId &&
-    (!sessionKey || sessionStore[sessionKey]?.sessionId !== opts.sessionId)
-  ) {
-    const foundKey = Object.keys(sessionStore).find(
-      (key) => sessionStore[key]?.sessionId === opts.sessionId,
-    );
-    if (foundKey) {
-      sessionKey = foundKey;
-    }
-  }
-
-  // When sessionId was provided but not found in the primary store, search all agent stores.
-  // Sessions created under a specific agent live in that agent's store file; the primary
-  // store (derived from the default agent) won't contain them.
-  // Also covers the case where --to derived a sessionKey that doesn't match the requested sessionId.
-  if (
-    opts.sessionId &&
-    !explicitSessionKey &&
-    (!sessionKey || sessionStore[sessionKey]?.sessionId !== opts.sessionId)
-  ) {
-    const allAgentIds = listAgentIds(opts.cfg);
-    for (const agentId of allAgentIds) {
-      if (agentId === storeAgentId) {
-        continue;
-      }
-      const altStorePath = resolveStorePath(sessionCfg?.store, { agentId });
-      const altStore = loadSessionStore(altStorePath);
-      const foundKey = Object.keys(altStore).find(
-        (key) => altStore[key]?.sessionId === opts.sessionId,
-      );
-      if (foundKey) {
-        return { sessionKey: foundKey, sessionStore: altStore, storePath: altStorePath };
-      }
-    }
-  }
+  // IMPORTANT: --session-id is treated as a fresh transcript identifier, not a resume token.
+  // Do not reverse-lookup existing session entries by id here, otherwise callers expecting a
+  // brand-new history can silently attach to stale transcripts.
 
   return { sessionKey, sessionStore, storePath };
 }
@@ -140,16 +105,18 @@ export function resolveSession(opts: {
     ? evaluateSessionFreshness({ updatedAt: sessionEntry.updatedAt, now, policy: resetPolicy })
         .fresh
     : false;
+  const explicitSessionId = opts.sessionId?.trim();
   const sessionId =
-    opts.sessionId?.trim() || (fresh ? sessionEntry?.sessionId : undefined) || crypto.randomUUID();
-  const isNewSession = !fresh && !opts.sessionId;
+    explicitSessionId || (fresh ? sessionEntry?.sessionId : undefined) || crypto.randomUUID();
+  // Explicit --session-id must always start a new history, even if the session key exists.
+  const isNewSession = Boolean(explicitSessionId) || !fresh;
 
   const persistedThinking =
-    fresh && sessionEntry?.thinkingLevel
+    !explicitSessionId && fresh && sessionEntry?.thinkingLevel
       ? normalizeThinkLevel(sessionEntry.thinkingLevel)
       : undefined;
   const persistedVerbose =
-    fresh && sessionEntry?.verboseLevel
+    !explicitSessionId && fresh && sessionEntry?.verboseLevel
       ? normalizeVerboseLevel(sessionEntry.verboseLevel)
       : undefined;
 

@@ -311,6 +311,13 @@ export async function agentCommand(
     persistedThinking,
     persistedVerbose,
   } = sessionResolution;
+  const explicitSessionIdProvided = Boolean(opts.sessionId?.trim());
+  const existingSessionId = resolvedSessionEntry?.sessionId;
+  const explicitSessionIdChanged =
+    explicitSessionIdProvided &&
+    typeof existingSessionId === "string" &&
+    existingSessionId.trim().length > 0 &&
+    existingSessionId !== sessionId;
   const sessionAgentId =
     agentIdOverride ??
     resolveSessionAgentId({
@@ -512,6 +519,10 @@ export async function agentCommand(
         updatedAt: Date.now(),
         skillsSnapshot,
       };
+      if (explicitSessionIdChanged) {
+        // New explicit session id must not inherit old transcript path/history.
+        delete next.sessionFile;
+      }
       await persistSessionEntry({
         sessionStore,
         sessionKey,
@@ -526,6 +537,10 @@ export async function agentCommand(
       const entry = sessionStore[sessionKey] ??
         sessionEntry ?? { sessionId, updatedAt: Date.now() };
       const next: SessionEntry = { ...entry, sessionId, updatedAt: Date.now() };
+      if (explicitSessionIdChanged) {
+        // New explicit session id must not inherit old transcript path/history.
+        delete next.sessionFile;
+      }
       if (thinkOverride) {
         next.thinkingLevel = thinkOverride;
       }
