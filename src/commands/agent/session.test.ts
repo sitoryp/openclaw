@@ -25,15 +25,12 @@ describe("resolveSessionKeyForRequest", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.resolveStorePath.mockReturnValue(MAIN_STORE_PATH);
+    mocks.loadSessionStore.mockReturnValue({});
   });
 
   const baseCfg: IdleHandsConfig = {};
 
   it("returns sessionKey when --to resolves a session key via context", async () => {
-    mocks.loadSessionStore.mockReturnValue({
-      "agent:main:main": { sessionId: "sess-1", updatedAt: 0 },
-    });
-
     const result = resolveSessionKeyForRequest({
       cfg: baseCfg,
       to: "+15551234567",
@@ -41,7 +38,7 @@ describe("resolveSessionKeyForRequest", () => {
     expect(result.sessionKey).toBe("agent:main:main");
   });
 
-  it("does not reverse-lookup by --session-id", async () => {
+  it("does not reverse-lookup by --session-id and creates isolated key", async () => {
     mocks.loadSessionStore.mockReturnValue({
       "agent:main:main": { sessionId: "target-session-id", updatedAt: 0 },
     });
@@ -50,28 +47,29 @@ describe("resolveSessionKeyForRequest", () => {
       cfg: baseCfg,
       sessionId: "target-session-id",
     });
-    expect(result.sessionKey).toBeUndefined();
+    expect(result.sessionKey).toBe("agent:main:main:sid:target-session-id");
   });
 
-  it("keeps --to-derived key even when --session-id differs", async () => {
-    mocks.loadSessionStore.mockReturnValue({
-      "agent:main:main": { sessionId: "other-session-id", updatedAt: 0 },
-    });
-
+  it("isolates --to-derived key when --session-id is provided", async () => {
     const result = resolveSessionKeyForRequest({
       cfg: baseCfg,
       to: "+15551234567",
       sessionId: "target-session-id",
     });
-    expect(result.sessionKey).toBe("agent:main:main");
+    expect(result.sessionKey).toBe("agent:main:main:sid:target-session-id");
     expect(result.storePath).toBe(MAIN_STORE_PATH);
   });
 
-  it("still honors explicit sessionKey", async () => {
-    mocks.loadSessionStore.mockReturnValue({
-      "agent:main:main": { sessionId: "other-id", updatedAt: 0 },
+  it("uses explicit agent id when creating isolated session key", async () => {
+    const result = resolveSessionKeyForRequest({
+      cfg: baseCfg,
+      sessionId: "target-session-id",
+      agentId: "task1",
     });
+    expect(result.sessionKey).toBe("agent:task1:main:sid:target-session-id");
+  });
 
+  it("still honors explicit sessionKey", async () => {
     const result = resolveSessionKeyForRequest({
       cfg: baseCfg,
       sessionKey: "agent:main:main",

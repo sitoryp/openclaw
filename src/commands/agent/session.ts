@@ -20,7 +20,7 @@ import {
   resolveStorePath,
   type SessionEntry,
 } from "../../config/sessions.js";
-import { normalizeMainKey } from "../../routing/session-key.js";
+import { normalizeAgentId, normalizeMainKey } from "../../routing/session-key.js";
 
 export type SessionResolution = {
   sessionId: string;
@@ -49,12 +49,12 @@ export function resolveSessionKeyForRequest(opts: {
   const sessionCfg = opts.cfg.session;
   const scope = sessionCfg?.scope ?? "per-sender";
   const mainKey = normalizeMainKey(sessionCfg?.mainKey);
-  const explicitSessionKey =
-    opts.sessionKey?.trim() ||
-    resolveExplicitAgentSessionKey({
-      cfg: opts.cfg,
-      agentId: opts.agentId,
-    });
+  const userSessionKey = opts.sessionKey?.trim();
+  const agentDefaultSessionKey = resolveExplicitAgentSessionKey({
+    cfg: opts.cfg,
+    agentId: opts.agentId,
+  });
+  const explicitSessionKey = userSessionKey || agentDefaultSessionKey;
   const storeAgentId = resolveAgentIdFromSessionKey(explicitSessionKey);
   const storePath = resolveStorePath(sessionCfg?.store, {
     agentId: storeAgentId,
@@ -66,8 +66,16 @@ export function resolveSessionKeyForRequest(opts: {
     explicitSessionKey ?? (ctx ? resolveSessionKey(scope, ctx, mainKey) : undefined);
 
   // IMPORTANT: --session-id is treated as a fresh transcript identifier, not a resume token.
-  // Do not reverse-lookup existing session entries by id here, otherwise callers expecting a
-  // brand-new history can silently attach to stale transcripts.
+  // To prevent lock contention and accidental history reuse on canonical keys like
+  // agent:<id>:main, route explicit session ids to an isolated per-session key.
+  const explicitSessionId = opts.sessionId?.trim();
+  if (explicitSessionId && !userSessionKey) {
+    const derivedAgentId = normalizeAgentId(
+      opts.agentId || resolveAgentIdFromSessionKey(sessionKey),
+    );
+    const baseRest = sessionKey ? sessionKey.replace(/^agent:[^:]+:/i, "") : mainKey;
+    sessionKey = `agent:${derivedAgentId}:${baseRest}:sid:${explicitSessionId}`;
+  }
 
   return { sessionKey, sessionStore, storePath };
 }
