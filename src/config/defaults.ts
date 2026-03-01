@@ -443,12 +443,7 @@ export function applyContextPruningDefaults(cfg: OpenClawConfig): OpenClawConfig
     const isAnthropicCacheRetentionTarget = (
       parsed: { provider: string; model: string } | null | undefined,
     ): parsed is { provider: string; model: string } =>
-      Boolean(
-        parsed &&
-        (parsed.provider === "anthropic" ||
-          (parsed.provider === "amazon-bedrock" &&
-            parsed.model.toLowerCase().includes("anthropic.claude"))),
-      );
+      Boolean(parsed && parsed.provider === "anthropic");
 
     for (const [key, entry] of Object.entries(nextModels)) {
       const parsed = parseModelRef(key, "anthropic");

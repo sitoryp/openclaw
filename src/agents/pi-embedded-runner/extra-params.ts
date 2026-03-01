@@ -56,7 +56,6 @@ type CacheRetentionStreamOptions = Partial<SimpleStreamOptions> & {
  *
  * Applies to:
  * - direct Anthropic provider
- * - Anthropic Claude models on Bedrock when cache retention is explicitly configured
  *
  * OpenRouter uses openai-completions API with hardcoded cache_control instead
  * of the cacheRetention stream option.
@@ -68,11 +67,7 @@ function resolveCacheRetention(
   provider: string,
 ): CacheRetention | undefined {
   const isAnthropicDirect = provider === "anthropic";
-  const hasBedrockOverride =
-    extraParams?.cacheRetention !== undefined || extraParams?.cacheControlTtl !== undefined;
-  const isAnthropicBedrock = provider === "amazon-bedrock" && hasBedrockOverride;
-
-  if (!isAnthropicDirect && !isAnthropicBedrock) {
+  if (!isAnthropicDirect) {
     return undefined;
   }
 
@@ -92,7 +87,6 @@ function resolveCacheRetention(
   }
 
   // Default to "short" only for direct Anthropic when not explicitly configured.
-  // Bedrock retains upstream provider defaults unless explicitly set.
   if (!isAnthropicDirect) {
     return undefined;
   }
@@ -168,20 +162,6 @@ function createStreamFnWithExtraParams(
   };
 
   return wrappedStreamFn;
-}
-
-function isAnthropicBedrockModel(modelId: string): boolean {
-  const normalized = modelId.toLowerCase();
-  return normalized.includes("anthropic.claude") || normalized.includes("anthropic/claude");
-}
-
-function createBedrockNoCacheWrapper(baseStreamFn: StreamFn | undefined): StreamFn {
-  const underlying = baseStreamFn ?? streamSimple;
-  return (model, context, options) =>
-    underlying(model, context, {
-      ...options,
-      cacheRetention: "none",
-    });
 }
 
 function isDirectOpenAIBaseUrl(baseUrl: unknown): boolean {
@@ -712,11 +692,6 @@ export function applyExtraParamsToAgent(
     const openRouterThinkingLevel = modelId === "auto" ? undefined : thinkingLevel;
     agent.streamFn = createOpenRouterWrapper(agent.streamFn, openRouterThinkingLevel);
     agent.streamFn = createOpenRouterSystemCacheWrapper(agent.streamFn);
-  }
-
-  if (provider === "amazon-bedrock" && !isAnthropicBedrockModel(modelId)) {
-    log.debug(`disabling prompt caching for non-Anthropic Bedrock model ${provider}/${modelId}`);
-    agent.streamFn = createBedrockNoCacheWrapper(agent.streamFn);
   }
 
   // Enable Z.AI tool_stream for real-time tool call streaming.

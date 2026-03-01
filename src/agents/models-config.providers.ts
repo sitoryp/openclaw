@@ -15,7 +15,6 @@ import {
 } from "../providers/kilocode-shared.js";
 import { normalizeOptionalSecretInput } from "../utils/normalize-secret-input.js";
 import { ensureAuthProfileStore, listProfilesForProvider } from "./auth-profiles.js";
-import { discoverBedrockModels } from "./bedrock-discovery.js";
 import {
   buildBytePlusModelDefinition,
   BYTEPLUS_BASE_URL,
@@ -462,8 +461,7 @@ export function normalizeProviders(params: {
     const normalizedApiKey = normalizeOptionalSecretInput(normalizedProvider.apiKey);
     const hasConfiguredApiKey = Boolean(normalizedApiKey || normalizedProvider.apiKey);
     if (hasModels && !hasConfiguredApiKey) {
-      const authMode =
-        normalizedProvider.auth ?? (normalizedKey === "amazon-bedrock" ? "aws-sdk" : undefined);
+      const authMode = normalizedProvider.auth;
       if (authMode === "aws-sdk") {
         const apiKey = resolveAwsSdkApiKeyVarName();
         mutated = true;
@@ -1094,38 +1092,5 @@ export async function resolveImplicitCopilotProvider(params: {
   return {
     baseUrl,
     models: [],
-  } satisfies ProviderConfig;
-}
-
-export async function resolveImplicitBedrockProvider(params: {
-  agentDir: string;
-  config?: OpenClawConfig;
-  env?: NodeJS.ProcessEnv;
-}): Promise<ProviderConfig | null> {
-  const env = params.env ?? process.env;
-  const discoveryConfig = params.config?.models?.bedrockDiscovery;
-  const enabled = discoveryConfig?.enabled;
-  const hasAwsCreds = resolveAwsSdkEnvVarName(env) !== undefined;
-  if (enabled === false) {
-    return null;
-  }
-  if (enabled !== true && !hasAwsCreds) {
-    return null;
-  }
-
-  const region = discoveryConfig?.region ?? env.AWS_REGION ?? env.AWS_DEFAULT_REGION ?? "us-east-1";
-  const models = await discoverBedrockModels({
-    region,
-    config: discoveryConfig,
-  });
-  if (models.length === 0) {
-    return null;
-  }
-
-  return {
-    baseUrl: `https://bedrock-runtime.${region}.amazonaws.com`,
-    api: "bedrock-converse-stream",
-    auth: "aws-sdk",
-    models,
   } satisfies ProviderConfig;
 }

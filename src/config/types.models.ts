@@ -7,7 +7,6 @@ export const MODEL_APIS = [
   "anthropic-messages",
   "google-generative-ai",
   "github-copilot",
-  "bedrock-converse-stream",
   "ollama",
 ] as const;
 
@@ -62,17 +61,7 @@ export type ModelProviderConfig = {
   };
 };
 
-export type BedrockDiscoveryConfig = {
-  enabled?: boolean;
-  region?: string;
-  providerFilter?: string[];
-  refreshInterval?: number;
-  defaultContextWindow?: number;
-  defaultMaxTokens?: number;
-};
-
 export type ModelsConfig = {
   mode?: "merge" | "replace";
   providers?: Record<string, ModelProviderConfig>;
-  bedrockDiscovery?: BedrockDiscoveryConfig;
 };

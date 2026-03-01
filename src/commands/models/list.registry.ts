@@ -3,11 +3,7 @@ import type { ModelRegistry } from "@mariozechner/pi-coding-agent";
 import { resolveOpenClawAgentDir } from "../../agents/agent-paths.js";
 import type { AuthProfileStore } from "../../agents/auth-profiles.js";
 import { listProfilesForProvider } from "../../agents/auth-profiles.js";
-import {
-  getCustomProviderApiKey,
-  resolveAwsSdkEnvVarName,
-  resolveEnvApiKey,
-} from "../../agents/model-auth.js";
+import { getCustomProviderApiKey, resolveEnvApiKey } from "../../agents/model-auth.js";
 import { ensureOpenClawModelsJson } from "../../agents/models-config.js";
 import { discoverAuthStorage, discoverModels } from "../../agents/pi-model-discovery.js";
 import type { OpenClawConfig } from "../../config/config.js";
@@ -28,9 +24,6 @@ const hasAuthForProvider = (
     return false;
   }
   if (listProfilesForProvider(authStore, provider).length > 0) {
-    return true;
-  }
-  if (provider === "amazon-bedrock" && resolveAwsSdkEnvVarName()) {
     return true;
   }
   if (resolveEnvApiKey(provider)) {
